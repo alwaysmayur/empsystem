@@ -11,6 +11,12 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
+import type { Metadata } from 'next'
+export const metadata: Metadata = {
+  title: 'Laves | StafTrach',
+  description: 'StafTrach management',
+}
+
 export default function Page() {
   return (
     <>

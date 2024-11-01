@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 "use client";
 import { z } from "zod";
 import { useTransition, useState } from "react";
@@ -51,7 +53,7 @@ export const LoginForm = () => {
     // Use startTransition for optimizing the state update during the fetch
     startTransition(async () => {
       try {
-        const response = await fetch("/api/login", {
+        const response = await fetch("/api/auth/login", {
           method: "POST", // Specify the method
           headers: {
             "Content-Type": "application/json", // Indicate JSON data

@@ -1,11 +1,33 @@
-// SidebarFooter.tsx
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
+"use client"
 import { SidebarFooter, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
 import { ChevronsUpDown, BadgeCheck, CreditCard, Bell, LogOut, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation"; // For client-side routing
+import {useEffect,useState} from "react"
 
-export function CustomSidebarFooter({ user }: { user: { name: string; email: string; avatar: string } }) {
+export function CustomSidebarFooter(props:any) {
+  
+  const router = useRouter();
+
+  // Function to handle logout
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", { method: "GET" });
+
+      if (response.ok) {
+        // Redirect to login page or perform other post-logout actions
+        router.push("/login");
+      } else {
+        console.error("Failed to log out:", await response.text());
+      }
+    } catch (error) {
+      console.error("Logout Error:", error);
+    }
+  };
+
   return (
     <SidebarFooter>
       <SidebarMenu>
@@ -14,12 +36,12 @@ export function CustomSidebarFooter({ user }: { user: { name: string; email: str
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">HR</AvatarFallback>
+                  {/* <AvatarImage src={props?.user?.avatar} alt={props?.user?.name} /> */}
+                  <AvatarFallback className="rounded-lg text-lg">{props?.user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate font-semibold">{props?.user?.name}</span>
+                  <span className="truncate text-xs">{props?.user?.email}</span>
                 </div>
                 <ChevronsUpDown className="ml-auto size-4" />
               </SidebarMenuButton>
@@ -28,39 +50,17 @@ export function CustomSidebarFooter({ user }: { user: { name: string; email: str
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                    {/* <AvatarImage src={props?.user?.avatar} alt={props?.user?.name} /> */}
+                    <AvatarFallback className="rounded-lg">{props?.user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user.name}</span>
-                    <span className="truncate text-xs">{user.email}</span>
+                    <span className="truncate font-semibold">{props?.user?.name}</span>
+                    <span className="truncate text-xs">{props?.user?.email}</span>
                   </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem>
-                  <Sparkles />
-                  Upgrade to Pro
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem>
-                  <BadgeCheck />
-                  Account
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <CreditCard />
-                  Billing
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Bell />
-                  Notifications
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut />
                 Log out
               </DropdownMenuItem>

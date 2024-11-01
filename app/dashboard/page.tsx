@@ -1,209 +1,65 @@
 "use client";
 
-import {
-  BadgeCheck,
-  Bell,
-  BookOpen,
-  Bot,
-  ChevronRight,
-  ChevronsUpDown,
-  Command,
-  CreditCard,
-  Folder,
-  Frame,
-  LifeBuoy,
-  LogOut,
-  Map,
-  MoreHorizontal,
-  PieChart,
-  Send,
-  Settings2,
-  Share,
-  Sparkles,
-  SquareTerminal,
-  Trash2,
-  CalendarClock,
-  Caravan,
-  Clock,
-  CircleGauge,
-  UserRoundPlus,
-  User,
-  LayoutDashboard,
-} from "lucide-react";
-
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-const data = {
-  user: {
-    name: "HR",
-    email: "hr@gmail.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
-  projects: [
-    {
-      name: "Dashboard",
-      url: "/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      name: "Employees",
-      url: "/employees",
-      icon: UserRoundPlus,
-    },
-    {
-      name: "Shifts",
-      url: "/shifts",
-      icon: Clock,
-    },
-    {
-      name: "Leaves",
-      url: "/leaves",
-      icon: Caravan,
-    },
-  ],
-};
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import DashboardStats from "@/components/dashboard/dashboardStats";
+interface StatItem {
+  label: string;
+  value: number;
+}
 
 export default function Page() {
+  const [user, setUser] = useState();
+  const [header, setHeader] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [states, setStates] = useState<StatItem[]>([]);
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch("/api/user/me");
+      if (!res.ok) throw new Error(await res.text());
+
+      const data = await res.json();
+      const { role } =data.user.employee;
+      const {employeeStates, shiftsStates, leavesStates } =data.user;
+
+      setUser(data.user.employee);
+      setHeader("Welcome to Employee Management system");
+
+      setStates(
+        role === "admin" || role === "hr"
+          ? [
+              { label: "Total Employees", value: employeeStates },
+              { label: "Total Shifts", value: shiftsStates },
+              { label: "Total Leaves Applied", value: leavesStates },
+            ]
+          : [
+              { label: "Total Shifts", value: shiftsStates },
+              { label: "Total Leaves Applied", value: leavesStates },
+            ]
+      );
+
+      setDescription(
+        role === "admin" || role === "hr"
+          ? "Manage the employees and their shifts easily with ShiftTrack."
+          : "Balance your shift, make work manageable, and enjoy every moment."
+      );
+    } catch (error) {
+      console.error("Failed to fetch user", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2">
@@ -224,50 +80,11 @@ export default function Page() {
         </div>
       </header>
       <div className="flex flex-1  flex-col gap-4 p-4 pt-0">
-        <div className="flex  justify-center py-12">
-          <div className="text-center">
-            <h1 className="text-4xl font-semibold">
-              Welcome to Employee Management system
-            </h1>
-            <p className="pt-5 text-gray-600">
-              Manage the employees and them shift easily with the ShiftTrack.
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border bg-card text-card-foreground shadow">
-            <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-sm font-medium">
-                Total Employees
-              </h3>
-            </div>
-            <div className="p-6 pt-0">
-              <div className="text-2xl font-bold">236</div>
-            </div>
-          </div>
-          <div className="rounded-xl border bg-card text-card-foreground shadow">
-            <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-sm font-medium">
-                Today's Total Shifts
-              </h3>
-            </div>
-            <div className="p-6 pt-0">
-              <div className="text-2xl font-bold">5</div>
-            </div>
-          </div>
-          <div className="rounded-xl border bg-card text-card-foreground shadow">
-            <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-sm font-medium">
-                Total Leaves Applied
-              </h3>
-            </div>
-            <div className="p-6 pt-0">
-              <div className="text-2xl font-bold">0</div>
-            </div>
-          </div>
-          {/* <div className="aspect-video rounded-xl bg-muted/50" />
-            <div className="aspect-video rounded-xl bg-muted/50" /> */}
-        </div>
+        <DashboardStats
+          header={header}
+          description={description}
+          stats={states}
+        />
         <div className="flex pt-5 justify-center">
           <img src="/team.svg" className="w-96" alt="" />
         </div>

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { NextResponse } from 'next/server';
 import userdb from "../../../../utility/db/mongoDB/schema/userSchema";
 import connectionMongoDB from "../../../../utility/db/mongoDB/connection";

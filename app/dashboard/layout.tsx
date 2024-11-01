@@ -1,179 +1,128 @@
 // RootLayout.tsx
-
+"use client";
 import { CustomSidebarContent } from "@/components/auth/customeSidebarContent";
 import { CustomSidebarFooter } from "@/components/auth/customeSidebarFooter";
 import { CustomSidebarHeader } from "@/components/auth/customeSidebarHeader";
-import { SidebarProvider, Sidebar, SidebarInset } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarInset,
+} from "@/components/ui/sidebar";
 
 import {
-    BadgeCheck,
-    Bell,
-    BookOpen,
-    Bot,
-    ChevronRight,
-    ChevronsUpDown,
-    Command,
-    CreditCard,
-    Folder,
-    Frame,
-    LifeBuoy,
-    LogOut,
-    Map,
-    MoreHorizontal,
-    PieChart,
-    Send,
-    Settings2,
-    Share,
-    Sparkles,
-    SquareTerminal,
-    Trash2,
-    CalendarClock,
-    Caravan,
-    Clock,
-    CircleGauge,
-    UserRoundPlus,
-    User,
-    LayoutDashboard,
-  } from "lucide-react";
-  
-  const data = {
-    user: {
-      name: "HR",
-      email: "hr@gmail.com",
-      avatar: "/avatars/shadcn.jpg",
-    },
-    navMain: [
-      {
-        title: "Playground",
-        url: "#",
-        icon: SquareTerminal,
-        isActive: true,
-        items: [
+  BadgeCheck,
+  Bell,
+  BookOpen,
+  Bot,
+  ChevronRight,
+  ChevronsUpDown,
+  Command,
+  CreditCard,
+  Folder,
+  Frame,
+  LifeBuoy,
+  LogOut,
+  Map,
+  MoreHorizontal,
+  PieChart,
+  Send,
+  Settings2,
+  Share,
+  Sparkles,
+  SquareTerminal,
+  Trash2,
+  CalendarClock,
+  Caravan,
+  Clock,
+  CircleGauge,
+  UserRoundPlus,
+  User,
+  LayoutDashboard,
+} from "lucide-react";
+
+import { useEffect, useState } from "react";
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [user, setUser] = useState();
+  const [projects, setProjects] = useState<
+    Array<{ name: string; url: string; icon: any }>
+  >([]);
+  const fetchUser = async () => {
+    try {
+      const res = await fetch("/api/user/me");
+      if (!res.ok) throw new Error(await res.text());
+
+      const data = await res.json();
+      setUser(data.user.employee);
+      if (
+        data.user.employee.role == "admin" ||
+        data.user.employee.role == "hr"
+      ) {
+        setProjects([
           {
-            title: "History",
-            url: "#",
+            name: "Dashboard",
+            url: "/dashboard",
+            icon: LayoutDashboard,
           },
           {
-            title: "Starred",
-            url: "#",
+            name: "Employees",
+            url: "/dashboard/employees",
+            icon: UserRoundPlus,
           },
           {
-            title: "Settings",
-            url: "#",
-          },
-        ],
-      },
-      {
-        title: "Models",
-        url: "#",
-        icon: Bot,
-        items: [
-          {
-            title: "Genesis",
-            url: "#",
+            name: "Shifts",
+            url: "/dashboard/shifts",
+            icon: Clock,
           },
           {
-            title: "Explorer",
-            url: "#",
+            name: "Leaves",
+            url: "/dashboard/leaves",
+            icon: Caravan,
+          },
+        ]);
+      } else {
+        setProjects([
+          {
+            name: "Dashboard",
+            url: "/dashboard",
+            icon: LayoutDashboard,
           },
           {
-            title: "Quantum",
-            url: "#",
-          },
-        ],
-      },
-      {
-        title: "Documentation",
-        url: "#",
-        icon: BookOpen,
-        items: [
-          {
-            title: "Introduction",
-            url: "#",
+            name: "Shifts",
+            url: "/dashboard/shifts",
+            icon: Clock,
           },
           {
-            title: "Get Started",
-            url: "#",
+            name: "Leaves",
+            url: "/dashboard/leaves",
+            icon: Caravan,
           },
-          {
-            title: "Tutorials",
-            url: "#",
-          },
-          {
-            title: "Changelog",
-            url: "#",
-          },
-        ],
-      },
-      {
-        title: "Settings",
-        url: "#",
-        icon: Settings2,
-        items: [
-          {
-            title: "General",
-            url: "#",
-          },
-          {
-            title: "Team",
-            url: "#",
-          },
-          {
-            title: "Billing",
-            url: "#",
-          },
-          {
-            title: "Limits",
-            url: "#",
-          },
-        ],
-      },
-    ],
-    navSecondary: [
-      {
-        title: "Support",
-        url: "#",
-        icon: LifeBuoy,
-      },
-      {
-        title: "Feedback",
-        url: "#",
-        icon: Send,
-      },
-    ],
-    projects: [
-      {
-        name: "Dashboard",
-        url: "/dashboard",
-        icon: LayoutDashboard,
-      },
-      {
-        name: "Employees",
-        url: "/dashboard/employees",
-        icon: UserRoundPlus,
-      },
-      {
-        name: "Shifts",
-        url: "/dashboard/shifts",
-        icon: Clock,
-      },
-      {
-        name: "Leaves",
-        url: "/dashboard/leaves",
-        icon: Caravan,
-      },
-    ],
+        ]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user", error);
+    }
   };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
+  useEffect(() => {
+    fetchUser();
+  }, []);
+  console.log("data", user);
+
+  return user ? (
     <SidebarProvider>
       <Sidebar variant="inset">
         <CustomSidebarHeader />
-        <CustomSidebarContent projects={data.projects} />
-        <CustomSidebarFooter user={data.user} />
+        <CustomSidebarContent projects={projects} />
+        <CustomSidebarFooter user={user} />
       </Sidebar>
       <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
+  ) : (
+    ""
   );
 }

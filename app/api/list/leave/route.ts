@@ -1,4 +1,5 @@
-// pages/api/leaves/route.ts
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { NextResponse } from 'next/server';
 import LeaveRequestModel from "@/utility/db/mongoDB/schema/leaveRequestSchema";
 import connectDB from "@/utility/db/mongoDB/connection";

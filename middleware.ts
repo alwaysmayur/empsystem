@@ -1,22 +1,40 @@
-import { NextRequest } from "next/server";
+// src/middleware.ts
 
-// middleware.ts
-import { NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt"; // Use NextAuth's JWT to check if user is authenticated
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+export function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname
 
-  // Check if token is available, if not, redirect to login page
-  if (!token) {
-    const loginUrl = new URL("/emp/login", req.url);
-    return NextResponse.redirect(loginUrl);
+  // Define paths that are considered public (accessible without a token)
+  const isPublicPath = path === '/login' || path === '/signup' || path === '/verifyemail'
+
+  // Get the token from the cookies
+  const token = request.cookies.get('token')?.value || ''
+
+  // Redirect logic based on the path and token presence
+  if(isPublicPath && token) {
+
+ // If trying to access a public path with a token, redirect to the home page
+    return NextResponse.redirect(new URL('/dashboard', request.nextUrl))
   }
 
-  return NextResponse.next(); // Continue if the user is authenticated
+// If trying to access a protected path without a token, redirect to the login page
+  if (!isPublicPath && !token) {
+    return NextResponse.redirect(new URL('/login', request.nextUrl))
+  }
+    
 }
 
-// Match middleware to specific routes where authentication is required (e.g., /dashboard, /profile)
+// It specifies the paths for which this middleware should be executed. 
+// In this case, it's applied to '/', '/profile', '/login', and '/signup'.
 export const config = {
-  matcher: ["/emp/dashboard", "/emp/profile"], // Add all protected routes here
-};
+  matcher: [
+    '/dashboard',
+    '/login',
+    '/signup',
+    '/dashboard/leaves',
+    '/dashboard/employees',
+    '/dashboard/shifts',
+  ]
+}

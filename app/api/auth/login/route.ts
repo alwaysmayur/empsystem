@@ -1,8 +1,7 @@
-
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import userdb from "../../../utility/db/mongoDB/schema/userSchema";
-import connectionMongoDB from "../../../utility/db/mongoDB/connection";
+import userdb from "@/utility/db/mongoDB/schema/userSchema";
+import connectionMongoDB from "@/utility/db/mongoDB/connection";
 
 import { NextResponse } from "next/server";
 
@@ -17,7 +16,7 @@ export async function POST(request: Request) {
   try {
     const req: LoginRequestBody = await request.json();
     const { email, password } = req;
-    
+
     // Validate the email and password
     if (!email || !password) {
       return NextResponse.json({
@@ -30,7 +29,7 @@ export async function POST(request: Request) {
     await connectionMongoDB();
 
     // Validate user email
-    const userValid = await userdb.findOne({ email: email });
+    const userValid = await userdb.findOne({ email: email.trim() });
 
     if (userValid) {
       // Validate password
@@ -56,13 +55,20 @@ export async function POST(request: Request) {
         const result = {
           updatedUser,
           token,
-          role:userValid.role
+          role: userValid.role,
         };
 
-        return NextResponse.json({
+        const response: any = NextResponse.json({
           status: 201,
           result,
         });
+
+        // Set the token as an HTTP-only cookie
+        response.cookies.set("token", token, {
+          httpOnly: true,
+        });
+        return response;
+        
       }
     } else {
       return NextResponse.json({

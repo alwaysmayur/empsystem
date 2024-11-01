@@ -1,4 +1,3 @@
-// SidebarContent.tsx
 
 import { SidebarContent, SidebarGroup, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuAction } from "@/components/ui/sidebar";
 import { MoreHorizontal } from "lucide-react";
@@ -18,7 +17,7 @@ export function CustomSidebarContent({ projects }: { projects: Array<{ name: str
                   <span>{item.name}</span>
                 </a>
               </SidebarMenuButton>
-              <DropdownMenu>
+              {/* <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuAction showOnHover>
                     <MoreHorizontal />
@@ -40,15 +39,15 @@ export function CustomSidebarContent({ projects }: { projects: Array<{ name: str
                     <span>Delete Project</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
+              </DropdownMenu> */}
             </SidebarMenuItem>
           ))}
-          <SidebarMenuItem>
+          {/* <SidebarMenuItem>
             <SidebarMenuButton>
               <MoreHorizontal />
               <span>More</span>
             </SidebarMenuButton>
-          </SidebarMenuItem>
+          </SidebarMenuItem> */}
         </SidebarMenu>
       </SidebarGroup>
     </SidebarContent>
