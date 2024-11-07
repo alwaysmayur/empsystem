@@ -1,4 +1,5 @@
 import LeaveListPage from "@/components/dashboard/leaveListPage";
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,8 +14,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 import type { Metadata } from 'next'
 export const metadata: Metadata = {
-  title: 'Laves | StafTrach',
-  description: 'StafTrach management',
+  title: 'Leaves | StaffTrack',
+  description: 'StaffTrack management',
 }
 
 export default function Page() {

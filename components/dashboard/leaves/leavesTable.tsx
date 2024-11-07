@@ -27,7 +27,8 @@ interface TableProps {
   data: LeaveRequest[]; // Define your leave request type
   refreshLeaves: () => Promise<void>; // Refresh leaves after edit
   onDelete: (id: string) => void; // Callback for deleting a leave request
-  onEdit: (leave: LeaveRequest) => void; // Callback for editing a leave request
+  onEdit: (leave: LeaveRequest) => void; // Callback for editing a leave request,
+  user: any;
 }
 
 export const LeaveTable: React.FC<TableProps> = ({
@@ -36,6 +37,7 @@ export const LeaveTable: React.FC<TableProps> = ({
   onDelete,
   onEdit,
   onStatusUpdate,
+  user,
 }) => {
   const [editingLeave, setEditingLeave] = useState<LeaveRequest | null>(null); // Track the leave being edited
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Track dialog state
@@ -56,73 +58,92 @@ export const LeaveTable: React.FC<TableProps> = ({
         <Table className="bg-gray-100 border-gray-900 rounded-xl">
           <TableHeader>
             <TableRow>
-              <TableHead>Employee ID</TableHead>
+              {user?.role == "admin" || user?.role == "hr" ? (
+                <TableHead>Employee Name</TableHead>
+              ) : (
+                ""
+              )}
               <TableHead>Leave Type</TableHead>
               <TableHead>Start Date & Time</TableHead>
               <TableHead>End Date & Time</TableHead>
               <TableHead>Reason</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              {user?.role == "admin" || user?.role == "hr" ? (
+                <TableHead>Actions</TableHead>
+              ) : (
+                ""
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((leave) => (
               <TableRow key={leave._id}>
-                <TableCell>{leave.employeeId.name}</TableCell>{" "}
+                {user?.role == "admin" || user?.role == "hr" ? (
+                  <TableCell>{leave.employeeId.name}</TableCell>
+                ) : (
+                  ""
+                )}
                 {/* Render the employee's name */}
                 <TableCell>{leave.leaveType}</TableCell>
                 <TableCell>
                   {new Date(leave.startDate).toLocaleDateString()}{" "}
-                  {new Date(leave.startTime).toLocaleTimeString([], {
+                  {leave?.startTime ? new Date(leave.startTime).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
-                  })}
+                  }):""}
                 </TableCell>
                 <TableCell>
                   {new Date(leave.endDate).toLocaleDateString()}{" "}
-                  {new Date(leave.endTime).toLocaleTimeString([], {
+                  {leave?.endTime ? new Date(leave.endTime).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
-                  })}
+                  }): ""}
                 </TableCell>
                 <TableCell>{leave.reason}</TableCell>
                 <TableCell>{leave.status}</TableCell>
-                <TableCell className="space-x-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        {" "}
-                        <Button
-                          variant="ghost"
-                          className="rounded-full py-0.5 px-2 hover:bg-green-400 hover:text-white text-green-500"
-                          onClick={() => onStatusUpdate(leave._id, "approved")}
-                        >
-                          <Check className="w-5 h-5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent className="border-gray-500 bg-white text-gay-800">
-                        <p>Approve</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                {user?.role == "admin" || user?.role == "hr" ? (
+                  <TableCell className="space-x-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            variant="ghost"
+                            className="rounded-full py-0.5 px-2 hover:bg-green-400 hover:text-white text-green-500"
+                            onClick={() =>
+                              onStatusUpdate(leave._id, "approved")
+                            }
+                          >
+                            <Check className="w-5 h-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="border-gray-500 bg-white text-gay-800">
+                          <p>Approve</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
 
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Button
-                          variant={"ghost"}
-                          className="rounded-full py-0.5 px-2 hover:bg-red-400 hover:text-white text-red-500"
-                          onClick={() => onStatusUpdate(leave._id, "rejected")}
-                        >
-                          <X className="w-5 h-5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent  className="border-gray-500 bg-white text-gay-800">
-                        <p>Reject</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TableCell>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            variant={"ghost"}
+                            className="rounded-full py-0.5 px-2 hover:bg-red-400 hover:text-white text-red-500"
+                            onClick={() =>
+                              onStatusUpdate(leave._id, "rejected")
+                            }
+                          >
+                            <X className="w-5 h-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="border-gray-500 bg-white text-gay-800">
+                          <p>Reject</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
+                ) : (
+                  ""
+                )}
               </TableRow>
             ))}
           </TableBody>
@@ -137,6 +158,7 @@ export const LeaveTable: React.FC<TableProps> = ({
         editingLeave={editingLeave} // Pass the leave data to the form
         isDialogOpen={isDialogOpen} // Pass isDialogOpen
         setIsDialogOpen={setIsDialogOpen} // Pass setIsDialogOpen
+        user={user} // Pass user data to the form
       />
     </>
   );

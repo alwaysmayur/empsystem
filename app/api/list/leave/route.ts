@@ -1,31 +1,24 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { NextResponse } from 'next/server';
+import { NextResponse,NextRequest } from 'next/server';
+import employeedb from "../../../../utility/db/mongoDB/schema/userSchema"; // Adjust this import path to your employee schema
 import LeaveRequestModel from "@/utility/db/mongoDB/schema/leaveRequestSchema";
 import connectDB from "@/utility/db/mongoDB/connection";
-// import { auth } from "@/auth.config"; // Import your auth utility to get user session
+import { getDataFromToken } from '@/helper/getDataFromToken';
 
-export async function GET(request: Request) {
-  // Assuming you have a way to get the user session (e.g., JWT, session cookie)
-//   const session = await auth();
 
-//   // Check if the user is authenticated
-//   if (!session || !session.user) {
-//     return NextResponse.json({
-//       status: 401,
-//       error: "Unauthorized",
-//     });
-//   }
 
-//   const userId = session.user._id; // User ID from the session
-//   const userRole = session.user.role; // User role from the session
+export async function GET(request: NextRequest) {
 
   try {
     await connectDB();
 
+    const userId = await getDataFromToken(request);
+    let user:any = await employeedb.findOne({_id:userId})
+
+    
     let leaveRequests;
 
-    // Fetch leave requests based on user role
     // if (userRole === "employee") {
     //   // Fetch only the employee's leave requests
     // //   leaveRequests = await LeaveRequestModel.find({ employeeId: userId });
@@ -41,7 +34,11 @@ export async function GET(request: Request) {
     //   });
     // }
 
-    leaveRequests = await LeaveRequestModel.find().populate("employeeId");
+    if (user?.role == "admin" || user?.role == "hr") {
+      leaveRequests = await LeaveRequestModel.find().populate("employeeId");
+    }else{
+      leaveRequests = await LeaveRequestModel.find({employeeId:userId}).populate("employeeId");
+    }
     
     return NextResponse.json({
       status: 200,

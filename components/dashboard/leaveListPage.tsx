@@ -27,8 +27,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { LeaveRequestUpdateBody } from "@/type/LeaveRequestUpdateBody";
+import { useUser } from "@/app//context/UseContex";
 
 const LeaveListPage = () => {
+  const user: any = useUser();
+
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [newLeave, setNewLeave] = useState(false);
@@ -220,6 +223,7 @@ const LeaveListPage = () => {
           editingLeave={newLeave ? null : editingLeave}
           isDialogOpen={isDialogOpen}
           setIsDialogOpen={setIsDialogOpen}
+          user={user}
         />
       )}
 
@@ -230,6 +234,7 @@ const LeaveListPage = () => {
           onDelete={handleDelete}
           onEdit={handleEdit}
           onStatusUpdate={handleStatusUpdate} // Pass status update handler
+          user={user}
         />
       </div>
     </div>

@@ -3,7 +3,7 @@ export interface Employee {
   name: string;
   email: string;
   role: string;
-  mobile: string;
+  mobileNumber: string;
   address: string;
   password?: string; // Make password optional
 }

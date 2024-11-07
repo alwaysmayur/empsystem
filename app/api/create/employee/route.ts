@@ -7,7 +7,7 @@ interface IRequestBody {
   email: string;
   password: string;
   role: string;
-  mobile: string;
+  mobileNumber: string;
   address?: string;
 }
 
@@ -15,9 +15,9 @@ export async function POST(request: Request) {
   const req: IRequestBody = await request.json();
 
   try {
-    const { name, email, password, role, mobile, address } = req;
+    const { name, email, password, role, mobileNumber, address } = req;
 
-    if (!name || !email || !password || !role || !mobile) {
+    if (!name || !email || !password || !role || !mobileNumber) {
       return NextResponse.json({
         status: 422,
         error: "Please fill up all details",
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       email,
       password, // Ensure to hash the password before saving it
       role,
-      mobileNumber: mobile,
+      mobileNumber: mobileNumber,
       address,
     });
 

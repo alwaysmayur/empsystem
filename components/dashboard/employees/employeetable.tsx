@@ -18,7 +18,7 @@ interface Employee {
   name: string;
   email: string;
   role: string;
-  mobile: string;
+  mobileNumber: string;
   address: string;
 }
 
@@ -56,7 +56,7 @@ export const EmployeeTable: React.FC<TableProps> = ({
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Mobile</TableHead>
-              <TableHead>Address</TableHead>
+              {/* <TableHead>Address</TableHead> */}
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -66,8 +66,8 @@ export const EmployeeTable: React.FC<TableProps> = ({
                 <TableCell>{employee.name}</TableCell>
                 <TableCell>{employee.email}</TableCell>
                 <TableCell>{employee.role}</TableCell>
-                <TableCell>{employee.mobile}</TableCell>
-                <TableCell>{employee.address}</TableCell>
+                <TableCell>{employee.mobileNumber}</TableCell>
+                {/* <TableCell>{employee.address}</TableCell> */}
                 <TableCell className="space-x-2">
                   {/* Directly trigger the dialog on Edit click */}
                   <Button

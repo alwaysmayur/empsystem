@@ -2,6 +2,11 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { NextAuthConfig } from "next-auth";
 import { getUserByEmail } from "@/utility/db/user"; // Assume this function retrieves user from DB
+type Credentials = {
+  email: string;
+  password: string;
+};
+
 
 const authConfig = {
   providers: [
@@ -11,13 +16,14 @@ const authConfig = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials) {        
+
         // Fetch the user from the database
-        const user = await getUserByEmail(credentials.email); // Function to fetch user by email
+        const user = await getUserByEmail(credentials.email as string); // Function to fetch user by email
         
         // Check if the user exists and verify the password
         if (user && user.password === credentials.password) { // Use hashed password comparison in production
-          return { id: user._id, name: user.name, email: user.email, role: user.role }; // Include role
+          return { name: user.name, email: user.email}; // Include role
         } else {
           return null; // Return null if user not found or password doesn't match
         }

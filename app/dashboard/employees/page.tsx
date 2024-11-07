@@ -12,8 +12,8 @@ import {SidebarTrigger} from "@/components/ui/sidebar";
 import EmployeeListPage from "@/components/dashboard/employeeListPage";
 import type { Metadata } from 'next'
 export const metadata: Metadata = {
-  title: 'Employees | StafTrach',
-  description: 'StafTrach management',
+  title: 'Employees | StaffTrack',
+  description: 'StaffTrack management',
 }
 export default function Page() {
   return (

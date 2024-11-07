@@ -56,6 +56,7 @@ interface LeaveFormProps {
   editingLeave?: any; // Adjust according to your leave type
   isDialogOpen: boolean;
   setIsDialogOpen: (open: boolean) => void;
+  user: any;
 }
 
 const LeaveForm: React.FC<LeaveFormProps> = ({
@@ -64,6 +65,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
   editingLeave,
   isDialogOpen,
   setIsDialogOpen,
+  user,
 }) => {
   const [error, setError] = useState<string | undefined>(""); // Error state
   const [success, setSuccess] = useState<string | undefined>(""); // Success state
@@ -72,7 +74,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
   const form = useForm<z.infer<typeof LeaveRequestSchema>>({
     resolver: zodResolver(LeaveRequestSchema),
     defaultValues: {
-      employeeId: "",
+      employeeId: user?.role === "admin" || user?.role === "hr" ? "" : user?._id,
       startDate: "",
       endDate: "",
       leaveType: "full-day",
@@ -82,20 +84,22 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
     },
   });
 
-  // Fetch employees when the form mounts
+  // Fetch employees when the form mounts if user is admin or HR
   useEffect(() => {
-    const fetchEmployees = async () => {
-      const response = await fetch("/api/list/employee");
-      if (!response.ok) {
-        setError("Failed to fetch employees.");
-        return;
-      }
-      const data = await response.json();
-      setEmployees(data.employees); // Assuming the data structure
-    };
+    if (user?.role === "admin" || user?.role === "hr") {
+      const fetchEmployees = async () => {
+        const response = await fetch("/api/list/employee");
+        if (!response.ok) {
+          setError("Failed to fetch employees.");
+          return;
+        }
+        const data = await response.json();
+        setEmployees(data.employees); // Assuming the data structure
+      };
 
-    fetchEmployees();
-  }, []);
+      fetchEmployees();
+    }
+  }, [user]);
 
   // Populate form with editing leave details if available
   useEffect(() => {
@@ -120,38 +124,38 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
     const result = await form.trigger(); // Trigger validation
 
     if (!result) {
-        setError("Please fix the validation errors before submitting.");
-        return; // Exit if validation fails
+      setError("Please fix the validation errors before submitting.");
+      return; // Exit if validation fails
     }
 
     try {
-        const method = editingLeave ? "PUT" : "POST";
-        const url = editingLeave
-            ? `/api/edit/leave/${editingLeave._id}` // Update URL according to your routing
-            : "/api/create/leave"; // Adjust endpoint for creating leave requests
+      const method = editingLeave ? "PUT" : "POST";
+      const url = editingLeave
+        ? `/api/edit/leave/${editingLeave._id}` // Update URL according to your routing
+        : "/api/create/leave"; // Adjust endpoint for creating leave requests
 
-        const response = await fetch(url, {
-            method,
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(values),
-        });
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (!response.ok) {
-            setError(data.error || "Operation failed.");
-        } else {
-            setSuccess(data.message || (editingLeave ? "Leave updated!" : "Leave request submitted!"));
-            await refreshLeaves();
-            onClose();
-            setIsDialogOpen(false);
-        }
+      if (!response.ok) {
+        setError(data.error || "Operation failed.");
+      } else {
+        setSuccess(data.message || (editingLeave ? "Leave updated!" : "Leave request submitted!"));
+        await refreshLeaves();
+        onClose();
+        setIsDialogOpen(false);
+      }
     } catch (err) {
-        setError("Network error. Please try again.");
+      setError("Network error. Please try again.");
     }
-};
+  };
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -169,34 +173,43 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="employeeId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Employee</FormLabel>
-                    <FormControl>
-                      <select
-                        {...field}
-                        className="w-full p-2 border rounded-md"
-                      >
-                        <option value="">Select an employee</option>
-                        {employees.length > 0 ? (
-                          employees.map((employee: Employee) => (
-                            <option key={employee._id} value={employee._id}>
-                              {employee.name || "Unknown Employee"}
-                            </option>
-                          ))
-                        ) : (
-                          <option disabled>No employees available</option>
-                        )}
-                      </select>
-                    </FormControl>
-                    <FormMessage className="font-normal" />
-                  </FormItem>
-                )}
-              />
+              {user?.role === "admin" || user?.role === "hr" ? (
+                <FormField
+                  control={form.control}
+                  name="employeeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Employee</FormLabel>
+                      <FormControl>
+                        <select
+                          {...field}
+                          className="w-full p-2 border rounded-md"
+                        >
+                          <option value="">Select an employee</option>
+                          {employees.length > 0 ? (
+                            employees.map((employee: Employee) => (
+                              <option key={employee._id} value={employee._id}>
+                                {employee.name || "Unknown Employee"}
+                              </option>
+                            ))
+                          ) : (
+                            <option disabled>No employees available</option>
+                          )}
+                        </select>
+                      </FormControl>
+                      <FormMessage className="font-normal" />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <input
+                  type="hidden"
+                  value={user?._id}
+                  {...form.register("employeeId")}
+                />
+              )}
 
+              {/* Remaining fields */}
               <FormField
                 control={form.control}
                 name="leaveType"
@@ -217,6 +230,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
                   </FormItem>
                 )}
               />
+
 
               <FormField
                 control={form.control}

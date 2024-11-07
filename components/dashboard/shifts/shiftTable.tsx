@@ -8,10 +8,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"; // Import Shadcn table components
-import { Dialog, DialogContent } from "@/components/ui/dialog"; // Shadcn Dialog
 import ShiftForm from "@/components/auth/shiftForm"; // Your shift form component
-import { CalendarDays, Trash2 } from "lucide-react"; // Icons
+import { FilePenLine, Copy, Trash2 } from "lucide-react"; // Icons
 import { Shift } from "@/type/Shift"; // Import the Shift type
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TableProps {
   data: Shift[]; // Define your shift type
@@ -75,12 +93,51 @@ export const ShiftTable: React.FC<TableProps> = ({
                 <TableCell>{shift.isApproved ? "Yes" : "No"}</TableCell>
                 <TableCell>{shift.status}</TableCell>
                 <TableCell className="space-x-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="rounded-full py-0.5 px-2  hover:bg-gray-500 hover:text-white  text-black"
+                              // onClick={() => handleEdit(shift)}
+                            >
+                              <Copy className="w-5 h-5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="border-gray-500 bg-white text-gay-800">
+                            <p>Copy Shift</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Are you absolutely sure?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently
+                          delete your account and remove your data from our
+                          servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleEdit(shift)}> 
+                            Continue
+                         </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
                   <Button
                     variant="ghost"
                     className="rounded-full py-0.5 px-2  hover:bg-gray-500 hover:text-white  text-black"
                     onClick={() => handleEdit(shift)}
                   >
-                    <CalendarDays className="w-5 h-5" />
+                    <FilePenLine className="w-5 h-5" />
                   </Button>
                   <Button
                     variant={"ghost"}

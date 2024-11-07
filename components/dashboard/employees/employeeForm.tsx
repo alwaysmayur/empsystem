@@ -32,7 +32,7 @@ const EmployeeSchema = z.object({
   email: z.string().email("Invalid email format").min(1, "Email is required"),
   password: z.string().min(6, "Password must be at least 6 characters long").optional(),
   role: z.string().min(1, "Role is required"),
-  mobile: z.string().min(1, "Mobile number is required"),
+  mobileNumber: z.string().min(1, "Mobile number is required"),
   address: z.string().optional(),
 });
 
@@ -61,7 +61,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       email: "",
       password: "", // Password remains empty unless specified
       role: "",
-      mobile: "",
+      mobileNumber: "",
       address: "",
     },
   });
@@ -73,7 +73,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         name: editingEmployee.name,
         email: editingEmployee.email,
         role: editingEmployee.role,
-        mobile: editingEmployee.mobile,
+        mobileNumber: editingEmployee.mobileNumber,
         address: editingEmployee.address || "", // Optional address field
       });
     }
@@ -195,7 +195,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
               <FormField
                 control={form.control}
-                name="mobile"
+                name="mobileNumber"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Mobile</FormLabel>
