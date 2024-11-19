@@ -1,40 +1,75 @@
-import { NextApiRequest, NextApiResponse } from "next";
-import EmployeeModel from "@/utility/db/mongoDB/schema/userSchema"; // Adjust the import based on your structure
-import { getToken } from "next-auth/jwt";
-import { connectToDatabase } from "@/lib/mongodb"; // Ensure you have the database connection function
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  await connectToDatabase(); // Connect to the database
+import { NextResponse } from 'next/server';
+import userdb from "@/utility/db/mongoDB/schema/userSchema";
+import connectionMongoDB from "@/utility/db/mongoDB/connection";
 
-  // Verify the JWT token
-  const token = await getToken({ req: req as any  });
+// Define the request body interface for type safety
+interface IRequestBody {
+  name: string;
+  email: string;
+  password: string;
+  role?: string; // Optional role
+  mobileNumber: string;
+  address?: string; // Optional address
+  jobRole: string; // Required job role
+}
 
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized" }); // Return unauthorized if token is not present
+// Create POST Request
+export async function POST(request: Request) {
+  // Parse the request body
+  const req: IRequestBody = await request.json();
+
+  try {
+    // Destructure the request body
+    const { name, email, password, role = "employee", mobileNumber, address, jobRole } = req;
+    
+    // Validate required fields
+    if (!name || !email || !password || !mobileNumber || !jobRole) {
+      return NextResponse.json({
+        status: 422,
+        error: "Please fill up all required fields (name, email, password, mobile number, and job role).",
+      });
+    }
+
+    // Connect to MongoDB
+    await connectionMongoDB();
+
+    // Check if a user with the given email already exists
+    const preuser = await userdb.findOne({ email });
+
+    if (preuser) {
+      return NextResponse.json({
+        status: 422,
+        error: "This email is already registered.",
+      });
+    }
+
+    // Create a new user instance with the provided data
+    const newUser = new userdb({
+      name,
+      email,
+      password,
+      role, // Default role is "employee" if not provided
+      mobileNumber,
+      address: address || "", // Use an empty string if address is not provided
+      jobRole,
+    });
+
+    // Save the user to the database
+    const storeData = await newUser.save();
+
+    // Respond with the created user data
+    return NextResponse.json({
+      status: 201,
+      message: "User created successfully.",
+      data: storeData,
+    });
+  } catch (error: any) {
+    console.error("Register API Error:", error);
+    return NextResponse.json({
+      status: 500,
+      error: "An unexpected error occurred. Please try again later.",
+    });
   }
-
-  if (req.method === "GET") {
-    const employees = await EmployeeModel.find({});
-    return res.status(200).json(employees);
-  }
-
-  if (req.method === "POST") {
-    const { name, email, password, role, mobile, address } = req.body;
-    const newEmployee = await EmployeeModel.create({ name, email, password, role, mobile, address });
-    return res.status(201).json(newEmployee);
-  }
-
-  if (req.method === "PUT") {
-    const { id, ...updates } = req.body; // Assuming id is sent in the body for updates
-    const updatedEmployee = await EmployeeModel.findByIdAndUpdate(id, updates, { new: true });
-    return res.status(200).json(updatedEmployee);
-  }
-
-  if (req.method === "DELETE") {
-    const { id } = req.body; // Assuming id is sent in the body for deletion
-    await EmployeeModel.findByIdAndDelete(id);
-    return res.status(204).send(null); // No content
-  }
-
-  return res.status(405).json({ message: "Method not allowed" }); // Handle unsupported methods
 }

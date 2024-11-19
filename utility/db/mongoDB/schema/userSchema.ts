@@ -1,19 +1,20 @@
-// /utility/db/mongoDB/schema/userSchema.ts
-
 import mongoose, { Document, Model } from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 
+// Interface for User Document
 interface UserDocument extends Document {
   name: string;
   email: string;
   password: string;
-  role: string; // Role can now include 'hr'
-  mobileNumber: string; // New field for mobile number
-  address: string; // New field for address
+  role: string; // Role can include 'admin', 'HR', 'employee', and 'hr'
+  mobileNumber: string; // Mobile number of the user
+  address: string; // Address of the user
+  jobRole: string; // New field for job role
   comparePassword(password: string): Promise<boolean>;
 }
 
+// Define the schema for the User
 const userSchema = new mongoose.Schema<UserDocument>({
   name: {
     type: String,
@@ -37,12 +38,12 @@ const userSchema = new mongoose.Schema<UserDocument>({
   },
   role: {
     type: String,
-    enum: ["admin", "HR", "employee", "hr"], // Updated to include 'hr'
+    enum: ["admin", "employee", "hr"], // Ensures role is one of these
     default: "employee",
   },
   mobileNumber: {
     type: String,
-    required: true, // Ensuring this field is required
+    required: true,
     validate(value: string) {
       if (!validator.isMobilePhone(value)) {
         throw new Error("Not a valid mobile number");
@@ -54,9 +55,13 @@ const userSchema = new mongoose.Schema<UserDocument>({
     required: true,
     trim: true,
   },
+  jobRole: {
+    type: String,
+    enum: [ "food packer", "cashier", "kitchen"], // Job roles allowed
+  },
 });
 
-// Hash password before saving
+// Middleware: Hash password before saving the user
 userSchema.pre<UserDocument>("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 12);
@@ -64,11 +69,12 @@ userSchema.pre<UserDocument>("save", async function (next) {
   next();
 });
 
-// Compare password method
-userSchema.methods.comparePassword = async function (password: string) {
+// Method: Compare user-entered password with stored hashed password
+userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
   return await bcrypt.compare(password, this.password);
 };
 
+// Define and export the User model
 const UserModel: Model<UserDocument> = mongoose.models.User || mongoose.model("User", userSchema);
 
 export default UserModel;

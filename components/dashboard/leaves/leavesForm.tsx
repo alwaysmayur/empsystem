@@ -25,6 +25,8 @@ import { Button } from "@/components/ui/button";
 import { Employee } from "@/type/Employee"; // Adjust path as necessary
 import { FormError } from "@/components/form-error";
 import { FormSuccess } from "@/components/form-success";
+import moment from "moment";
+import Swal from "sweetalert2";
 
 const LeaveRequestSchema = z
   .object({
@@ -74,7 +76,8 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
   const form = useForm<z.infer<typeof LeaveRequestSchema>>({
     resolver: zodResolver(LeaveRequestSchema),
     defaultValues: {
-      employeeId: user?.role === "admin" || user?.role === "hr" ? "" : user?._id,
+      employeeId:
+        user?.role === "admin" || user?.role === "hr" ? "" : user?._id,
       startDate: "",
       endDate: "",
       leaveType: "full-day",
@@ -134,6 +137,46 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
         ? `/api/edit/leave/${editingLeave._id}` // Update URL according to your routing
         : "/api/create/leave"; // Adjust endpoint for creating leave requests
 
+      const currentDate = moment(); // Current date and time
+      const start = moment(values.startDate);
+      const end = moment(values.endDate);
+
+      if (start.isBefore(currentDate, "day")) {
+        setIsDialogOpen(false);
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Start date cannot be earlier than today.",
+        }).then(() => {
+          setIsDialogOpen(true);
+        });
+        return;
+      }
+
+      if (end.isBefore(currentDate, "day")) {
+        setIsDialogOpen(false);
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "End date cannot be earlier than today.",
+        }).then(() => {
+          setIsDialogOpen(true);
+        });
+        return;
+      }
+
+      if (end.isBefore(start, "day")) {
+        setIsDialogOpen(false);
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "End date cannot be earlier than start date.",
+        }).then(() => {
+          setIsDialogOpen(true);
+        });
+        return;
+      }
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -147,7 +190,10 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
       if (!response.ok) {
         setError(data.error || "Operation failed.");
       } else {
-        setSuccess(data.message || (editingLeave ? "Leave updated!" : "Leave request submitted!"));
+        setSuccess(
+          data.message ||
+            (editingLeave ? "Leave updated!" : "Leave request submitted!")
+        );
         await refreshLeaves();
         onClose();
         setIsDialogOpen(false);
@@ -230,7 +276,6 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
                   </FormItem>
                 )}
               />
-
 
               <FormField
                 control={form.control}

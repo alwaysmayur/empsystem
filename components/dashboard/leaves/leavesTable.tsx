@@ -22,7 +22,7 @@ import { LeaveRequest } from "@/type/LeaveRequest"; // Import the LeaveRequest t
 interface TableProps {
   onStatusUpdate: (
     id: string,
-    newStatus: "approved" | "rejected" | "pending"
+    newStatus: "Approved" | "Rejected" | "Pending"
   ) => void;
   data: LeaveRequest[]; // Define your leave request type
   refreshLeaves: () => Promise<void>; // Refresh leaves after edit
@@ -110,7 +110,7 @@ export const LeaveTable: React.FC<TableProps> = ({
                             variant="ghost"
                             className="rounded-full py-0.5 px-2 hover:bg-green-400 hover:text-white text-green-500"
                             onClick={() =>
-                              onStatusUpdate(leave._id, "approved")
+                              onStatusUpdate(leave._id, "Approved")
                             }
                           >
                             <Check className="w-5 h-5" />
@@ -129,7 +129,7 @@ export const LeaveTable: React.FC<TableProps> = ({
                             variant={"ghost"}
                             className="rounded-full py-0.5 px-2 hover:bg-red-400 hover:text-white text-red-500"
                             onClick={() =>
-                              onStatusUpdate(leave._id, "rejected")
+                              onStatusUpdate(leave._id, "Rejected")
                             }
                           >
                             <X className="w-5 h-5" />

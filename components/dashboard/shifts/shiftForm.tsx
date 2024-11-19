@@ -1,10 +1,10 @@
 "use client";
 
 import { z } from "zod";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Checkbox } from "@/components/ui/checkbox"; // Ensure this import is correct
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -27,22 +27,68 @@ import { Shift } from "@/type/Shift"; // Adjust path as necessary
 import { Employee } from "@/type/Employee"; // Adjust path as necessary
 import { FormError } from "@/components/form-error";
 import { FormSuccess } from "@/components/form-success";
+import { useUser } from "@/app/context/UseContex"; // Assuming you have a user context for current user info
 
-// Zod schema for shift validation
-const ShiftSchema = z.object({
-  employeeId: z.string().min(1, "Employee ID is required"),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().min(1, "End date is required"),
-  startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().min(1, "End time is required"),
-  isApproved: z.boolean().optional(),
-  status: z.enum(["scheduled", "completed", "canceled"]).default("scheduled"),
-});
+const timeRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/;
+
+const ShiftSchema = z
+  .object({
+    employeeId: z.string().min(1, "Employee ID is required"),
+    shiftDate: z.string().min(1, "Shift date is required"),
+    startTime: z
+      .string()
+      .min(1, "Start time is required")
+      .regex(timeRegex, "Start time must be in the format hh:mm AM/PM"),
+    endTime: z
+      .string()
+      .min(1, "End time is required")
+      .regex(timeRegex, "End time must be in the format hh:mm AM/PM"),
+    isApproved: z.boolean().optional(),
+    status: z.enum(["scheduled", "completed", "canceled"]).default("scheduled"),
+  })
+  .refine(
+    (data: any) => {
+      const shiftDate = new Date(data.shiftDate);
+      const [startHour, startMinute, startPeriod] = data.startTime
+        .split(/[: ]/)
+        .map((v, i) => (i < 2 ? parseInt(v, 10) : v));
+      const [endHour, endMinute, endPeriod] = data.endTime
+        .split(/[: ]/)
+        .map((v, i) => (i < 2 ? parseInt(v, 10) : v));
+
+      const start = new Date(
+        shiftDate.getFullYear(),
+        shiftDate.getMonth(),
+        shiftDate.getDate(),
+        (startHour % 12) + (startPeriod === "PM" ? 12 : 0),
+        startMinute
+      );
+
+      const end = new Date(
+        shiftDate.getFullYear(),
+        shiftDate.getMonth(),
+        shiftDate.getDate(),
+        (endHour % 12) + (endPeriod === "PM" ? 12 : 0),
+        endMinute
+      );
+
+      if (end < start) {
+        // Adjust for shifts crossing midnight
+        end.setDate(end.getDate() + 1);
+      }
+
+      const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      return diffHours <= 8;
+    },
+    {
+      message: "Shift duration exceeds the limit of 8 hours.",
+    }
+  );
 
 interface ShiftFormProps {
   onClose: () => void;
   refreshShifts: () => Promise<void>;
-  editingShift?: Shift | null; // Optional prop for editing
+  editingShift?: Shift | null;
   isDialogOpen: boolean;
   setIsDialogOpen: (open: boolean) => void;
 }
@@ -54,24 +100,24 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
   isDialogOpen,
   setIsDialogOpen,
 }) => {
-  const [error, setError] = useState<string | undefined>(""); // Error state
-  const [success, setSuccess] = useState<string | undefined>(""); // Success state
-  const [employees, setEmployees] = useState<Employee[]>([]); // State for employees
+  const user: any = useUser(); // Assuming useUser hook gives you the current user with role information
+
+  const [error, setError] = useState<string | undefined>("");
+  const [success, setSuccess] = useState<string | undefined>("");
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   const form = useForm<z.infer<typeof ShiftSchema>>({
     resolver: zodResolver(ShiftSchema),
     defaultValues: {
       employeeId: "",
-      startDate: "",
-      endDate: "",
-      startTime: "", // Add default for startTime
-      endTime: "",   // Add default for endTime
+      shiftDate: "",
+      startTime: "",
+      endTime: "",
       isApproved: false,
       status: "scheduled",
     },
   });
 
-  // Fetch employees when the form mounts
   useEffect(() => {
     const fetchEmployees = async () => {
       const response = await fetch("/api/list/employee");
@@ -80,26 +126,23 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
         return;
       }
       const data = await response.json();
-      console.log(data);
-      
-      setEmployees(data.employees); // Assuming the data structure
+      setEmployees(data.employees);
     };
 
     fetchEmployees();
   }, []);
 
-  // Populate form with editing shift details if available
   useEffect(() => {
     if (editingShift) {
       form.reset({
-        employeeId: editingShift?.employeeId?.toString() ?? "",
-        startDate: editingShift.startDate,
-        endDate: editingShift.endDate,
-        startTime: editingShift.startTime, // Populate startTime
-        endTime: editingShift.endTime,       // Populate endTime
+        employeeId: editingShift.employeeId._id,
+        shiftDate: editingShift.shiftDate,
+        startTime: editingShift.startTime,
+        endTime: editingShift.endTime,
         isApproved: editingShift.isApproved,
         status: editingShift.status,
       });
+      console.log("Form Values After Reset:", form.getValues());
     }
   }, [editingShift, form]);
 
@@ -123,10 +166,12 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (data.status !== 200) {
         setError(data.error || "Operation failed.");
       } else {
-        setSuccess(data.message || (editingShift ? "Shift updated!" : "Shift added!"));
+        setSuccess(
+          data.message || (editingShift ? "Shift updated!" : "Shift added!")
+        );
         await refreshShifts();
         onClose();
         setIsDialogOpen(false);
@@ -149,7 +194,7 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-4">
+            {user?.role !== "employee" && ( // Check user role and hide employee selection for "employee"
               <FormField
                 control={form.control}
                 name="employeeId"
@@ -157,162 +202,263 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
                   <FormItem>
                     <FormLabel>Employee</FormLabel>
                     <FormControl>
-                      <select {...field} className="w-full p-2 border rounded-md">
-                        <option value="">Select an employee</option>
-                        {employees.length > 0 ? (
-                          employees.map((employee: Employee) => (
-                            <option key={employee._id} value={employee._id}>
-                              {typeof employee.name === "string" ? employee.name : "Unknown Employee"}
-                            </option>
-                          ))
-                        ) : (
-                          <option disabled>No employees available</option>
-                        )}
-                      </select>
-                    </FormControl>
-                    <FormMessage className="font-normal" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="date"
-                        placeholder="Select start date"
-                      />
-                    </FormControl>
-                    <FormMessage className="font-normal" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="startTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Time</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="time"
-                        placeholder="Select start time"
-                      />
-                    </FormControl>
-                    <FormMessage className="font-normal" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="date"
-                        placeholder="Select end date"
-                      />
-                    </FormControl>
-                    <FormMessage className="font-normal" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="endTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Time</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="time"
-                        placeholder="Select end time"
-                      />
-                    </FormControl>
-                    <FormMessage className="font-normal" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <FormControl>
                       <select
                         {...field}
                         className="w-full p-2 border rounded-md"
                       >
-                        <option value="scheduled">Scheduled</option>
-                        <option value="completed">Completed</option>
-                        <option value="canceled">Canceled</option>
+                        <option value="">Select an employee</option>
+                        {employees.map((employee) => (
+                          <option key={employee._id} value={employee._id}>
+                            {employee.name || "Unknown Employee"}
+                          </option>
+                        ))}
                       </select>
                     </FormControl>
-                    <FormMessage className="font-normal" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
+            )}
 
-              <FormField
-                control={form.control}
-                name="isApproved"
-                render={({ field }) => (
+            <FormField
+              control={form.control}
+              name="shiftDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Shift Date</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="date"
+                      placeholder="Select shift date"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="startTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start Time</FormLabel>
+                  <div className="flex space-x-2">
+                    {/* Hour Dropdown */}
+                    <FormControl>
+                      <select
+                        value={
+                          field.value
+                            .split(":")[0]
+                            ?.replace(/AM|PM/, "")
+                            .trim() || "12"
+                        }
+                        className="w-1/3 p-2 border rounded-md"
+                        onChange={(e) => {
+                          const timeParts = field.value.split(":");
+                          const newTime = `${e.target.value}:${
+                            timeParts[1] || "00"
+                          } ${timeParts[2] || "AM"}`;
+                          field.onChange(newTime);
+                        }}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const hour = i + 1;
+                          return (
+                            <option
+                              key={hour}
+                              value={hour < 10 ? `0${hour}` : hour}
+                            >
+                              {hour}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </FormControl>
+
+                    {/* Minute Dropdown */}
+                    <FormControl>
+                      <select
+                        value={field.value.split(":")[1]?.split(" ")[0] || "00"}
+                        className="w-1/3 p-2 border rounded-md"
+                        onChange={(e) => {
+                          const timeParts = field.value.split(":");
+                          const newTime = `${timeParts[0] || "12"}:${
+                            e.target.value
+                          } ${timeParts[2] || "AM"}`;
+                          field.onChange(newTime);
+                        }}
+                      >
+                        {Array.from({ length: 60 }, (_, i) => {
+                          const minute = i < 10 ? `0${i}` : i;
+                          return (
+                            <option key={minute} value={minute}>
+                              {minute}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </FormControl>
+
+                    {/* AM/PM Dropdown */}
+                    <FormControl>
+                      <select
+                        value={field.value.includes("AM") ? "AM" : "PM"}
+                        className="w-1/3 p-2 border rounded-md"
+                        onChange={(e) => {
+                          const timeParts = field.value.split(":");
+                          const newTime = `${timeParts[0] || "12"}:${
+                            timeParts[1]?.split(" ")[0] || "00"
+                          } ${e.target.value}`;
+                          field.onChange(newTime);
+                        }}
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="endTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>End Time</FormLabel>
+                  <div className="flex space-x-2">
+                    {/* Hour Dropdown */}
+                    <FormControl>
+                      <select
+                        value={
+                          field.value
+                            .split(":")[0]
+                            ?.replace(/AM|PM/, "")
+                            .trim() || "12"
+                        }
+                        className="w-1/3 p-2 border rounded-md"
+                        onChange={(e) => {
+                          const timeParts = field.value.split(":");
+                          const newTime = `${e.target.value}:${
+                            timeParts[1] || "00"
+                          } ${timeParts[2] || "AM"}`;
+                          field.onChange(newTime);
+                        }}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const hour = i + 1;
+                          return (
+                            <option
+                              key={hour}
+                              value={hour < 10 ? `0${hour}` : hour}
+                            >
+                              {hour}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </FormControl>
+
+                    {/* Minute Dropdown */}
+                    <FormControl>
+                      <select
+                        value={field.value.split(":")[1]?.split(" ")[0] || "00"}
+                        className="w-1/3 p-2 border rounded-md"
+                        onChange={(e) => {
+                          const timeParts = field.value.split(":");
+                          const newTime = `${timeParts[0] || "12"}:${
+                            e.target.value
+                          } ${timeParts[2] || "AM"}`;
+                          field.onChange(newTime);
+                        }}
+                      >
+                        {Array.from({ length: 60 }, (_, i) => {
+                          const minute = i < 10 ? `0${i}` : i;
+                          return (
+                            <option key={minute} value={minute}>
+                              {minute}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </FormControl>
+
+                    {/* AM/PM Dropdown */}
+                    <FormControl>
+                      <select
+                        value={field.value.includes("AM") ? "AM" : "PM"}
+                        className="w-1/3 p-2 border rounded-md"
+                        onChange={(e) => {
+                          const timeParts = field.value.split(":");
+                          const newTime = `${timeParts[0] || "12"}:${
+                            timeParts[1]?.split(" ")[0] || "00"
+                          } ${e.target.value}`;
+                          field.onChange(newTime);
+                        }}
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <FormControl>
+                    <select {...field} className="w-full p-2 border rounded-md">
+                      <option value="scheduled">Scheduled</option>
+                      <option value="completed">Completed</option>
+                      <option value="canceled">Canceled</option>
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="isApproved"
+              render={({ field }) =>
+                user?.role === "admin" || user?.role === "hr" ? (
                   <FormItem>
                     <div className="flex items-center space-x-2">
                       <FormControl>
                         <Checkbox
-                          id="isApproved" // You can give it a unique ID
-                          checked={field.value} // Use field.value for the checked state
-                          onCheckedChange={(checked) => field.onChange(checked)} // Update the form state on change
+                          id="isApproved"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <label
-                        htmlFor="isApproved" // Ensure the label is linked to the checkbox
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Approval Status
-                      </label>
+                      <FormLabel>Approved</FormLabel>
                     </div>
-                    <FormMessage className="font-normal" />
+                    <FormMessage />
                   </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Display success or error messages */}
-            <FormSuccess message={success || ""} />
-            <FormError message={error || ""} />
+                ) : null
+              }
+            />
 
             <DialogFooter>
-              <Button type="submit" className="w-full">
+              <Button type="submit" variant="outline">
                 {editingShift ? "Update Shift" : "Add Shift"}
-              </Button>
-              <Button
-                type="button"
-                onClick={onClose}
-                variant="outline"
-                className="w-full"
-              >
-                Cancel
               </Button>
             </DialogFooter>
           </form>
         </Form>
+        <FormSuccess message={success || ""} />
+        <FormError message={error || ""} />
       </DialogContent>
     </Dialog>
   );

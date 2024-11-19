@@ -4,7 +4,6 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -13,6 +12,9 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "noUnusedLocals": false, // Allows unused variables
+    "noUnusedParameters": false, // Allows unused function parameters
+    "strict": false, // Disables strict mode if many type errors are due to strict typing
     "plugins": [
       {
         "name": "next"

@@ -10,7 +10,7 @@ export interface LeaveRequest {
   startTime: string; // Start time for half-day or hourly leaves
   endTime: string; // End time for half-day or hourly leaves
   reason: string; // Reason for the leave
-  status: "pending" | "approved" | "rejected"; // Approval status
+  status: "Pending" | "Approved" | "Rejected"; // Approval status
   createdAt: Date; // When the request was created
   updatedAt: Date; // When the request was last updated
   }

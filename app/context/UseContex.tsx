@@ -1,10 +1,10 @@
-"use client"
+"use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-const UserContext = createContext(null);
+const UserContext = createContext<any>(null);
 
 export const UserProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null); // Use `any` if the structure is uncertain or can vary
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -13,9 +13,9 @@ export const UserProvider: React.FC<React.PropsWithChildren<unknown>> = ({ child
         if (!res.ok) throw new Error(await res.text());
 
         const data = await res.json();
-        console.log({data});
-        
-        setUser(data.user.employee);
+        console.log({ data });
+
+        setUser(data.user.employee); // Storing employee data as user content
       } catch (error) {
         console.error("Failed to fetch user", error);
       }

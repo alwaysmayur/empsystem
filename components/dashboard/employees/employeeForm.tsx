@@ -22,18 +22,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 import { Employee } from "@/type/Employee"; // Adjust path as necessary
 import { FormError } from "@/components/form-error"; // Ensure component exists
 import { FormSuccess } from "@/components/form-success"; // Ensure component exists
 
-// Zod schema for employee validation
 const EmployeeSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email format").min(1, "Email is required"),
   password: z.string().min(6, "Password must be at least 6 characters long").optional(),
-  role: z.string().min(1, "Role is required"),
+  role: z.enum(["admin", "hr", "employee"], { message: "Role is required" }),
   mobileNumber: z.string().min(1, "Mobile number is required"),
   address: z.string().optional(),
+  jobRole: z.enum(["default", "food packer", "cashier", "kitchen"], { message: "Job role is required" }),
 });
 
 interface EmployeeFormProps {
@@ -60,12 +61,13 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       name: "",
       email: "",
       password: "", // Password remains empty unless specified
-      role: "",
+      role: "employee", // Default to "employee"
       mobileNumber: "",
       address: "",
+      jobRole: "default", // Default job role
     },
   });
-
+  
   // Automatically populate the form if editingEmployee is passed
   useEffect(() => {
     if (editingEmployee) {
@@ -75,6 +77,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         role: editingEmployee.role,
         mobileNumber: editingEmployee.mobileNumber,
         address: editingEmployee.address || "", // Optional address field
+        jobRole: editingEmployee?.jobRole || "default", // Use optional chaining to safely access jobRole
       });
     }
   }, [editingEmployee, form]);
@@ -82,7 +85,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   const onSubmit = async (values: z.infer<typeof EmployeeSchema>) => {
     setError("");
     setSuccess("");
-
+    console.log(values);
+    
     try {
       const method = editingEmployee ? "PUT" : "POST";
       const url = editingEmployee
@@ -99,7 +103,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (data.status !== 201) {
         setError(data.error || "Operation failed.");
       } else {
         setSuccess(data.message || (editingEmployee ? "Employee updated!" : "Employee added!"));
@@ -109,7 +113,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       }
     } catch (err) {
       setError("Network error. Please try again.");
-    } 
+    }
   };
 
   return (
@@ -126,9 +130,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-4">
+              {/* Name Field */}
               <FormField
                 control={form.control}
-                name="name" 
+                name="name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Name</FormLabel>
@@ -140,6 +145,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                 )}
               />
 
+              {/* Email Field */}
               <FormField
                 control={form.control}
                 name="email"
@@ -147,18 +153,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        type="email"
-                        placeholder="Enter employee's email"
-                      />
+                      <Input {...field} type="email" placeholder="Enter employee's email" />
                     </FormControl>
                     <FormMessage className="font-normal" />
                   </FormItem>
                 )}
               />
 
-              {/* Show password field only if adding a new employee */}
+              {/* Password Field (only for adding new employees) */}
               {!editingEmployee && (
                 <FormField
                   control={form.control}
@@ -167,11 +169,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input
-                          {...field}
-                          type="password"
-                          placeholder="Enter employee's password"
-                        />
+                        <Input {...field} type="password" placeholder="Enter employee's password" />
                       </FormControl>
                       <FormMessage className="font-normal" />
                     </FormItem>
@@ -179,6 +177,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                 />
               )}
 
+              {/* Role Field */}
               <FormField
                 control={form.control}
                 name="role"
@@ -186,13 +185,48 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   <FormItem>
                     <FormLabel>Role</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter employee's role" />
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <span>{field.value}</span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="HR">HR</SelectItem>
+                          <SelectItem value="employee">Employee</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage className="font-normal" />
                   </FormItem>
                 )}
               />
 
+              {/* Job Role Field */}
+              <FormField
+                control={form.control}
+                name="jobRole"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job Role</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <span>{field.value}</span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="default">Default</SelectItem>
+                          <SelectItem value="food packer">Food Packer</SelectItem>
+                          <SelectItem value="cashier">Cashier</SelectItem>
+                          <SelectItem value="kitchen">Kitchen</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage className="font-normal" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Mobile Number Field */}
               <FormField
                 control={form.control}
                 name="mobileNumber"
@@ -200,16 +234,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   <FormItem>
                     <FormLabel>Mobile</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Enter employee's mobile number"
-                      />
+                      <Input {...field} type="number"  placeholder="Enter employee's mobile number" pattern="[0-9]{3}-[0-9]{2}-[0-9]{3}" />
                     </FormControl>
                     <FormMessage className="font-normal" />
                   </FormItem>
                 )}
               />
 
+              {/* Address Field */}
               <FormField
                 control={form.control}
                 name="address"

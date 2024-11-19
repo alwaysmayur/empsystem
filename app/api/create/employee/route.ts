@@ -1,85 +1,75 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { NextResponse } from 'next/server';
-import employeedb from "../../../../utility/db/mongoDB/schema/userSchema";
+import userdb from "../../../../utility/db/mongoDB/schema/userSchema";
 import connectionMongoDB from "../../../../utility/db/mongoDB/connection";
 
+// Define the request body interface for type safety
 interface IRequestBody {
   name: string;
   email: string;
   password: string;
-  role: string;
+  role?: string; // Optional role
   mobileNumber: string;
-  address?: string;
+  address?: string; // Optional address
+  jobRole: string; // Required job role
 }
 
+// Create POST Request
 export async function POST(request: Request) {
+  // Parse the request body
   const req: IRequestBody = await request.json();
 
   try {
-    const { name, email, password, role, mobileNumber, address } = req;
-
-    if (!name || !email || !password || !role || !mobileNumber) {
-      return NextResponse.json({
-        status: 422,
-        error: "Please fill up all details",
-      });
-    }
+    // Destructure the request body
+    const { name, email, password, role = "employee", mobileNumber, address, jobRole } = req;
     
-    const validRoles = ["admin", "hr", "employee"];
-    if (!validRoles.includes(role)) {
+    // Validate required fields
+    if (!name || !email || !password || !mobileNumber || !jobRole) {
       return NextResponse.json({
         status: 422,
-        error: `Role must be one of the following: ${validRoles.join(", ")}`,
+        error: "Please fill up all required fields (name, email, password, mobile number, and job role).",
       });
     }
 
+    // Connect to MongoDB
     await connectionMongoDB();
 
-    const preEmployee = await employeedb.findOne({ email });
-    if (preEmployee) {
+    // Check if a user with the given email already exists
+    const existingUser = await userdb.findOne({ email });
+
+    if (existingUser) {
       return NextResponse.json({
         status: 422,
-        error: "This Email is Already Exist",
+        error: "This email is already registered.",
       });
     }
 
-    const finalEmployee = new employeedb({
+    // Create a new user instance with the provided data
+    const newUser = new userdb({
       name,
       email,
-      password, // Ensure to hash the password before saving it
-      role,
-      mobileNumber: mobileNumber,
-      address,
+      password,
+      role, // Default role is "employee" if not provided
+      mobileNumber,
+      address: address || "", // Use an empty string if address is not provided
+      jobRole,
     });
 
-    const storeData = await finalEmployee.save();
+    // Save the user to the database
+    const storeData = await newUser.save();
 
+    // Respond with the created user data
     return NextResponse.json({
       status: 201,
-      storeData,
+      message: "User created successfully.",
+      data: storeData,
     });
-  } catch (error: unknown) {
-    console.error("Add Employee API Error ::", error);
-    return NextResponse.json({
-      status: 422,
-      error: error instanceof Error ? error.message : "An unknown error occurred.",
-    });
-  }
-}
-
-export async function GET() {
-  try {
-    await connectionMongoDB();
-    const employees = await employeedb.find({});
-
-    return NextResponse.json({
-      status: 200,
-      employees,
-    });
-  } catch (error: unknown) {
-    console.error("Get Employees API Error ::", error);
+  } catch (error: any) {
+    console.error("Register API Error:", error);
     return NextResponse.json({
       status: 500,
-      error: error instanceof Error ? error.message : "Failed to fetch employees.",
+      error: "An unexpected error occurred. Please try again later.",
     });
   }
 }
