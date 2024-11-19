@@ -22,7 +22,12 @@ export async function GET(request: NextRequest) {
 
       const employeeStates = await employeedb.find();
 
-      const shiftsStates = await ShiftModel.find();
+      let shiftsStates: any;
+      if (employee.role == "employee") {
+        shiftsStates = await ShiftModel.find();
+      } else {
+        shiftsStates = await ShiftModel.find({ employeeId: userId });
+      }
 
       const leavesStates = await LeaveRequestModel.find({ status: "pending" });
 

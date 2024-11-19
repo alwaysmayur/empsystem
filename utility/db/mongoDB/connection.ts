@@ -17,9 +17,8 @@ async function connectMongoDB(): Promise<IConnectionStatus> {
 
     // Connect MongoDB with the DB string
     await mongoose.connect(DB,{
-  connectTimeoutMS: 30000,
-  socketTimeoutMS: 45000,
-    }); // No need for useNewUrlParser or useUnifiedTopology
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 45000,}); // No need for useNewUrlParser or useUnifiedTopology
 
     console.log("MongoDB connected successfully..");
     return { status: 200, message: "MongoDB connected successfully.." };
