@@ -20,14 +20,15 @@ const DashboardStats = ({
   
   return (
     <>
-      <div className="flex justify-center  w-full py-12">
+      <div className="flex justify-center w-full py-12">
         <div className="text-center">
           <h1 className="text-4xl font-semibold">{header}</h1>
           <p className="pt-5 text-gray-600">{description}</p>
         </div>
       </div>
       <div className="w-full flex justify-center ">
-      <div className={`grid gap-4 md:grid-cols-2  ${stats?.length > 2 ?"lg:grid-cols-3 w-[80%]" : "lg:grid-cols-2 w-1/2"}`}>
+      <div className={`grid gap-4 md:grid-cols-2  ${stats?.length > 2 ?"lg:grid-cols-3 w-full" : "lg:grid-cols-2  w-full"}`}>
+      {/* <div className={`grid gap-4 md:grid-cols-2  ${stats?.length > 2 ?"lg:grid-cols-3 w-[80%]" : "lg:grid-cols-2 w-1/2"}`}> */}
         {stats.map((stat, index) => (
           <div
             key={index}

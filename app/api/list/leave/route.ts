@@ -8,7 +8,7 @@ import { getDataFromToken } from '@/helper/getDataFromToken';
 
 
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
 
   try {
     await connectDB();
@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
 
     
     let leaveRequests;
+
+    const { employee_id } = await request.json();
 
     // if (userRole === "employee") {
     //   // Fetch only the employee's leave requests
@@ -35,7 +37,12 @@ export async function GET(request: NextRequest) {
     // }
 
     if (user?.role == "admin" || user?.role == "hr") {
-      leaveRequests = await LeaveRequestModel.find().populate("employeeId");
+       if (employee_id == "all") {
+        
+         leaveRequests = await LeaveRequestModel.find().populate("employeeId");
+        }else{
+         leaveRequests = await LeaveRequestModel.find({employeeId:employee_id}).populate("employeeId");
+       }
     }else{
       leaveRequests = await LeaveRequestModel.find({employeeId:userId}).populate("employeeId");
     }

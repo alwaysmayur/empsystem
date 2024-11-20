@@ -13,7 +13,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
     // Update status if a valid status is provided
     if (req.status) {
-      const validStatuses = ["pending", "approved", "rejected"];
+      const validStatuses = ["Pending", "Approved", "Rejected"];
       if (!validStatuses.includes(req.status)) {
         return NextResponse.json({
           status: 400,

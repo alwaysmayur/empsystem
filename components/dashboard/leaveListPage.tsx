@@ -39,7 +39,7 @@ const LeaveListPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [status, setStatus] = useState<LeaveRequestUpdateBody | null>();
 
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
@@ -52,8 +52,12 @@ const LeaveListPage = () => {
     if (startDate) query.append("startDate", startDate);
     if (endDate) query.append("endDate", endDate);
 
-    const res = await fetch(`/api/list/leave?${query.toString()}`, {
+    const res = await fetch(`/api/list/leave`, {
       headers: { Authorization: `Bearer ${token}` },
+      method: "POST",
+      body: JSON.stringify({
+        employee_id: selectedEmployee, // Pass the swapRequestId
+      }),
     });
 
     if (!res.ok) {
@@ -131,59 +135,17 @@ const LeaveListPage = () => {
   return (
     <div className="p-4">
       <div className="flex gap-4 mb-4">
-        {/* Date Range Filters */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-[280px] justify-start text-left font-normal",
-                !startDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {startDate
-                ? format(new Date(startDate), "PPP")
-                : "Pick Start Date"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={startDate ? new Date(startDate) : undefined}
-              onSelect={(date: any) =>
-                setStartDate(date?.toISOString().split("T")[0] || "")
-              }
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-[280px] justify-start text-left font-normal",
-                !endDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {endDate ? format(new Date(endDate), "PPP") : "Pick End Date"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={endDate ? new Date(endDate) : undefined}
-              onSelect={(date: any) =>
-                setEndDate(date?.toISOString().split("T")[0] || "")
-              }
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-
+         {/* Add Leave Button */}
+      <Button
+        variant="outline"
+        className="gap-2 flex justify-center items-center"
+        onClick={() => {
+          setNewLeave(true);
+          setIsDialogOpen(true);
+        }}
+      >
+        <span>Add Leave</span> <CirclePlus className="w-5 h-5" />
+      </Button>
         {/* Employee Filter */}
         <Select onValueChange={(value) => setSelectedEmployee(value)}>
           <SelectTrigger className="w-[180px]">
@@ -201,19 +163,8 @@ const LeaveListPage = () => {
             </SelectGroup>
           </SelectContent>
         </Select>
-      </div>
 
-      {/* Add Leave Button */}
-      <Button
-        variant="outline"
-        className="gap-2 flex justify-center items-center"
-        onClick={() => {
-          setNewLeave(true);
-          setIsDialogOpen(true);
-        }}
-      >
-        <span>Add Leave</span> <CirclePlus className="w-5 h-5" />
-      </Button>
+      </div>
 
       {/* Render the dialog for adding or editing leaves */}
       {isDialogOpen && (
