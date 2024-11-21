@@ -65,7 +65,7 @@ const Dashboard: React.FC = () => {
   const [leaveData, setLeaveData] = useState<LeaveRequest[]>([]);
   const [shiftData, setShiftData] = useState<Shift[]>([]);
   const [employeeData, setEmployeeData] = useState<Employee[]>([]);
-  const [user, setUser] = useState();
+  const [user, setUser] = useState<any>();
   const [header, setHeader] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [states, setStates] = useState<StatItem[]>([]);
@@ -84,11 +84,7 @@ const Dashboard: React.FC = () => {
 
       setStates(
         role === "admin" || role === "hr"
-          ? [
-              { label: "Total Employees", value: employeeStates },
-              { label: "Total Shifts", value: shiftsStates },
-              { label: "Total Leaves Applied", value: leavesStates },
-            ]
+          ? []
           : [
               { label: "Total Shifts", value: shiftsStates },
               { label: "Total Leaves Applied", value: leavesStates },
@@ -121,13 +117,64 @@ const Dashboard: React.FC = () => {
       .post("/api/list/shift", { startDate: new Date().toISOString() })
       .then((res) => setShiftData(res.data.shifts))
       .catch((err) => console.error(err));
-
-    // Fetch Employee Data
-    axios
-      .get("/api/list/employee")
-      .then((res) => setEmployeeData(res.data.employees))
-      .catch((err) => console.error(err));
   }, []);
+
+  const [chartData, setChartData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        const response = await fetch("/api/list/employee");
+        const { employees, status } = await response.json();
+        setEmployeeData(employees);
+
+        if (status === 200) {
+          // Group employees by month-year in the frontend
+          const groupedData = employees.reduce((acc: any, employee: any) => {
+            const createdAt = new Date(employee.createdAt);
+            const monthYear = `${
+              createdAt.getMonth() + 1
+            }-${createdAt.getFullYear()}`;
+
+            if (!acc[monthYear]) {
+              acc[monthYear] = 0;
+            }
+
+            acc[monthYear]++;
+            return acc;
+          }, {});
+
+          const labels = Object.keys(groupedData);
+          const counts = Object.values(groupedData);
+
+          setChartData({
+            labels,
+            datasets: [
+              {
+                label: "Employee Count",
+                data: counts,
+                backgroundColor: "rgba(75, 192, 192, 0.5)",
+              },
+            ],
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching employee data:", error);
+      }
+    };
+
+    fetchEmployeeData();
+  }, []);
+
+  // if (!chartData) return <div>Loading...</div>;
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: { position: "top" as const },
+      title: { display: true, text: "Monthly Employee Count" },
+    },
+  };
 
   // Helper function to get a color based on the role
   const getColorForRole = (role: string) => {
@@ -158,35 +205,24 @@ const Dashboard: React.FC = () => {
     ],
   };
 
-  // Prepare bar chart data for shifts assigned to employees, now as a stacked bar chart
   const barChartData = {
-    labels: employeeData.map((emp) => emp.name),
+    labels: employeeData
+      .filter((emp: any) => emp.role !== "admin") // Exclude admin
+      .map((emp) => emp.name),
     datasets: ["Food Packer", "Cashier", "Kitchen"].map((role) => ({
       label: role,
-      data: employeeData.map(
-        (emp) =>
-          shiftData.filter(
-            (shift) => shift.employeeId === emp._id && shift.role === role
-          ).length
-      ),
+      data: employeeData
+        .filter((emp: any) => emp.role !== "admin") // Exclude admin
+        .map((emp: any) => {
+          const employeeShifts = shiftData.filter(
+            (shift: any) => shift.employeeId._id === emp._id // Match employee ID correctly
+          );
+          return employeeShifts.filter(
+            (shift: any) => emp.jobRole.toLowerCase() === role.toLowerCase() // Match job role correctly
+          ).length;
+        }),
       backgroundColor: getColorForRole(role),
     })),
-  };
-
-  // Prepare area chart data for shifts over time
-  const areaChartData = {
-    labels: shiftData.map((shift) =>
-      moment(shift.shiftDate).format("DD-MM-YYYY")
-    ),
-    datasets: [
-      {
-        label: "Shifts Over Time",
-        data: shiftData.map((shift) => shift.duration),
-        fill: true,
-        backgroundColor: "rgba(66, 165, 245, 0.2)",
-        borderColor: "#42A5F5",
-      },
-    ],
   };
 
   return (
@@ -208,52 +244,66 @@ const Dashboard: React.FC = () => {
           </Breadcrumb>
         </div>
       </header>
-      <div className="mx-12">
-          <DashboardStats
-            header={header}
-            description={description}
-            stats={states}
-          />
-          {/* <div className="flex pt-5 justify-center">
-          <img src="/team.svg" className="w-96" alt="" />
-        </div> */}
-          {/* <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" /> */}
-        </div>
-
-      <div className="p-6 flex w-full justify-center gap-12">
-        <Card className="flex w-full flex-col items-center content-center justify-center">
-          <CardHeader>Leave Status</CardHeader>
-          <CardContent>
-            <Pie data={pieChartData} />
-          </CardContent>
-        </Card>
-
-        <Card className="flex w-full flex-col  items-center content-center justify-center">
-          <CardHeader>Shifts Per Employee</CardHeader>
-          <CardContent>
-            <Bar
-              data={barChartData}
-              options={{
-                responsive: true,
-                plugins: {
-                  title: {
-                    display: true,
-                    text: "Shifts Assigned by Role",
-                  },
-                },
-                scales: {
-                  x: {
-                    stacked: true,
-                  },
-                  y: {
-                    stacked: true,
-                  },
-                },
-              }}
-            />
-          </CardContent>
-        </Card>
+      <div className="mx-6">
+        <DashboardStats
+          header={header}
+          description={description}
+          stats={states}
+        />
+        {user?.role !== "admin" && user?.role !== "hr" ? (
+          <div className="flex pt-5 justify-center">
+            <img src="/team.svg" className="w-96" alt="" />
+          </div>
+        ) : null}
+        {/* <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" /> */}
       </div>
+
+      {user?.role == "admin" || user?.role == "hr" ? (
+        <div className="p-6 gap-2 w-full justify-center flex-col">
+          <div className="flex  gap-12 ">
+            <Card className="flex w-full flex-col items-center content-center justify-center">
+              <CardHeader>Leave Status</CardHeader>
+              <CardContent>
+                <Pie data={pieChartData} />
+              </CardContent>
+            </Card>
+
+            <Card className="flex w-full flex-col items-center content-center justify-center">
+              <CardHeader>Employees</CardHeader>
+              <CardContent style={{ width: "380px", height: "300px" }}>
+                {chartData && <Bar options={options} data={chartData} />}
+              </CardContent>
+            </Card>
+            <Card className="flex w-full flex-col  items-center content-center justify-center">
+              <CardHeader>Shifts Per Employee</CardHeader>
+              <CardContent style={{ width: "380px", height: "300px" }}>
+                <Bar
+                  data={barChartData}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      title: {
+                        display: true,
+                        text: "Shifts Assigned by Role",
+                      },
+                    },
+                    scales: {
+                      x: {
+                        stacked: true,
+                      },
+                      y: {
+                        stacked: true,
+                      },
+                    },
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      ) : (
+        ""
+      )}
     </>
   );
 };

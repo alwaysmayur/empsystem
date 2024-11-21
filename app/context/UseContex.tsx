@@ -13,8 +13,6 @@ export const UserProvider: React.FC<React.PropsWithChildren<unknown>> = ({ child
         if (!res.ok) throw new Error(await res.text());
 
         const data = await res.json();
-        console.log({ data });
-
         setUser(data.user.employee); // Storing employee data as user content
       } catch (error) {
         console.error("Failed to fetch user", error);

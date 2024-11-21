@@ -11,6 +11,7 @@ interface UserDocument extends Document {
   mobileNumber: string; // Mobile number of the user
   address: string; // Address of the user
   jobRole: string; // New field for job role
+  createdAt: Date;
   comparePassword(password: string): Promise<boolean>;
 }
 
@@ -57,8 +58,9 @@ const userSchema = new mongoose.Schema<UserDocument>({
   },
   jobRole: {
     type: String,
-    enum: [ "food packer", "cashier", "kitchen"], // Job roles allowed
+    enum: ["food packer", "cashier", "kitchen"], // Job roles allowed
   },
+  createdAt: { type: Date, default: Date.now },
 });
 
 // Middleware: Hash password before saving the user
@@ -70,11 +72,14 @@ userSchema.pre<UserDocument>("save", async function (next) {
 });
 
 // Method: Compare user-entered password with stored hashed password
-userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
+userSchema.methods.comparePassword = async function (
+  password: string
+): Promise<boolean> {
   return await bcrypt.compare(password, this.password);
 };
 
 // Define and export the User model
-const UserModel: Model<UserDocument> = mongoose.models.User || mongoose.model("User", userSchema);
+const UserModel: Model<UserDocument> =
+  mongoose.models.User || mongoose.model("User", userSchema);
 
 export default UserModel;
