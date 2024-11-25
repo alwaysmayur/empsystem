@@ -12,15 +12,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog"; // Shadcn Dialog
 import EmployeeForm from "@/components/auth/employeeForm"; // Your employee form component
 
 import { FilePenLine, Trash2 } from "lucide-react"; // Icons
-
-interface Employee {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-  mobileNumber: string;
-  address: string;
-}
+import {Employee} from"@/type/Employee"
 
 interface TableProps {
   data: Employee[]; // Define your employee type
@@ -55,7 +47,8 @@ export const EmployeeTable: React.FC<TableProps> = ({
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Mobile</TableHead>
+              <TableHead>Type</TableHead>
+              {/* <TableHead>Mobile</TableHead> */}
               {/* <TableHead>Address</TableHead> */}
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -66,7 +59,8 @@ export const EmployeeTable: React.FC<TableProps> = ({
                 <TableCell>{employee.name}</TableCell>
                 <TableCell>{employee.email}</TableCell>
                 <TableCell>{employee.role}</TableCell>
-                <TableCell>{employee.mobileNumber}</TableCell>
+                <TableCell>{employee.type}</TableCell>
+                {/* <TableCell>{employee.mobileNumber}</TableCell> */}
                 {/* <TableCell>{employee.address}</TableCell> */}
                 <TableCell className="space-x-2">
                   {/* Directly trigger the dialog on Edit click */}

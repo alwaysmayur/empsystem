@@ -9,6 +9,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import DashboardStats from "@/components/dashboard/dashboardStats";
+import LeaveListPage from "@/components/dashboard/leaveListPage";
 interface StatItem {
   label: string;
   value: number;
@@ -196,9 +197,9 @@ const Dashboard: React.FC = () => {
     datasets: [
       {
         data: [
-          leaveData.filter((leave) => leave.status === "Approved").length,
-          leaveData.filter((leave) => leave.status === "Pending").length,
-          leaveData.filter((leave) => leave.status === "Rejected").length,
+          leaveData?.filter((leave) => leave.status === "Approved").length,
+          leaveData?.filter((leave) => leave.status === "Pending").length,
+          leaveData?.filter((leave) => leave.status === "Rejected").length,
         ],
         backgroundColor: ["#4CAF50", "#FFC107", "#F44336"],
       },
@@ -225,6 +226,14 @@ const Dashboard: React.FC = () => {
     })),
   };
 
+  const [offeredShifts, setOfferedShifts] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/shift/getOfferedShifts")
+      .then((res) => res.json())
+      .then((data) => setOfferedShifts(data.shifts));
+  }, []);
+  
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2">
@@ -244,6 +253,7 @@ const Dashboard: React.FC = () => {
           </Breadcrumb>
         </div>
       </header>
+      {user?.role !== "admin" && user?.role !== "hr" ? (
       <div className="mx-6">
         <DashboardStats
           header={header}
@@ -255,19 +265,23 @@ const Dashboard: React.FC = () => {
             <img src="/team.svg" className="w-96" alt="" />
           </div>
         ) : null}
-        {/* <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" /> */}
-      </div>
+      </div>):""}
 
+      <div className="flex w-full gap-4 p-4 pt-0">
+      {user?.role == "admin" || user?.role == "hr" ? (
+        <LeaveListPage pieChartData={pieChartData} />) : null}
+        {/* <div className="">
+           <Card className="flex w-full flex-col items-center content-center justify-center">
+          <CardHeader>Leave Status</CardHeader>
+          <CardContent>
+            <Pie data={pieChartData} />
+          </CardContent>
+        </Card>
+        </div> */}
+      </div>
       {user?.role == "admin" || user?.role == "hr" ? (
         <div className="p-6 gap-2 w-full justify-center flex-col">
           <div className="flex  gap-12 ">
-            <Card className="flex w-full flex-col items-center content-center justify-center">
-              <CardHeader>Leave Status</CardHeader>
-              <CardContent>
-                <Pie data={pieChartData} />
-              </CardContent>
-            </Card>
-
             <Card className="flex w-full flex-col items-center content-center justify-center">
               <CardHeader>Employees</CardHeader>
               <CardContent style={{ width: "380px", height: "300px" }}>

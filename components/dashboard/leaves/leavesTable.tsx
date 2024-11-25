@@ -55,7 +55,8 @@ export const LeaveTable: React.FC<TableProps> = ({
   return (
     <>
       {data?.length > 0 ? (
-        <Table className="bg-gray-100 border-gray-900 rounded-xl">
+        <div className="relative w-full rounded max-h-96 overflow-y-auto">
+        <Table className="bg-gray-100 relative border-gray-900 rounded-xl ">
           <TableHeader>
             <TableRow>
               {user?.role == "admin" || user?.role == "hr" ? (
@@ -77,6 +78,7 @@ export const LeaveTable: React.FC<TableProps> = ({
           </TableHeader>
           <TableBody>
             {data.map((leave) => (
+              leave.status == "Pending" ? 
               <TableRow key={leave._id}>
                 {user?.role == "admin" || user?.role == "hr" ? (
                   <TableCell>{leave.employeeId.name}</TableCell>
@@ -144,10 +146,11 @@ export const LeaveTable: React.FC<TableProps> = ({
                 ) : (
                   ""
                 )}
-              </TableRow>
+              </TableRow> : ""
             ))}
           </TableBody>
         </Table>
+        </div>
       ) : (
         <div>No leave requests available.</div>
       )}

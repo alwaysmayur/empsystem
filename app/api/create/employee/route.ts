@@ -13,6 +13,7 @@ interface IRequestBody {
   mobileNumber: string;
   address?: string; // Optional address
   jobRole: string; // Required job role
+  type: string; // Required job role
 }
 
 // Create POST Request
@@ -22,10 +23,10 @@ export async function POST(request: Request) {
 
   try {
     // Destructure the request body
-    const { name, email, password, role = "employee", mobileNumber, address, jobRole } = req;
+    const { name, email, password, role = "employee",type, mobileNumber, address, jobRole } = req;
     
     // Validate required fields
-    if (!name || !email || !password || !mobileNumber || !jobRole) {
+    if (!name || !email || !password || !mobileNumber || !jobRole || !type) {
       return NextResponse.json({
         status: 422,
         error: "Please fill up all required fields (name, email, password, mobile number, and job role).",
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
       mobileNumber,
       address: address || "", // Use an empty string if address is not provided
       jobRole,
+      type
     });
 
     // Save the user to the database

@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
 
     if (userId) {
       const employee = await employeedb.findOne(
-        { _id: userId },
-        { role: 1, name: 1, _id: 1, email: 1 }
+        { _id: userId }
+      
       );
 
       const employeeStates = await employeedb.find();

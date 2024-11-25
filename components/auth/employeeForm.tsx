@@ -35,6 +35,7 @@ const EmployeeSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters long").optional(),
   role: z.string().min(1, "Role is required"),
   mobile: z.string().min(1, "Mobile number is required"),
+  jobRole: z.string().min(1, "Jobrole is required"),
   address: z.string().optional(),
 });
 
@@ -75,7 +76,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         name: editingEmployee.name,
         email: editingEmployee.email,
         role: editingEmployee.role,
-        mobile: editingEmployee.mobile,
+        mobile: editingEmployee.mobileNumber,
         address: editingEmployee.address || "", // Optional address field
       });
     }

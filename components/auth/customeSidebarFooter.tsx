@@ -28,6 +28,9 @@ import {
 import { useRouter } from "next/navigation"; // For client-side routing
 import { useEffect, useState } from "react";
 import { useUser } from "@/app//context/UseContex";
+import moment from "moment";
+
+
 export function CustomSidebarFooter() {
   const user: any = useUser();
 
@@ -66,8 +69,8 @@ export function CustomSidebarFooter() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user?.name}</span>
-                  <span className="truncate text-xs">{user?.email}</span>
+                  <span className="truncate font-semibold">Profile</span>
+                  <span className="truncate text-xs">Manage</span>
                 </div>
                 <ChevronsUpDown className="ml-auto size-4" />
               </SidebarMenuButton>
@@ -93,6 +96,18 @@ export function CustomSidebarFooter() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem >
+              <span className="font-semibold">Role - </span> {user?.role}
+              </DropdownMenuItem>
+              <DropdownMenuItem >
+              <span className="font-semibold">Job Role - </span> {user?.jobRole}
+              </DropdownMenuItem>
+              <DropdownMenuItem >
+              <span className="font-semibold">Type - </span> {user?.type}
+              </DropdownMenuItem>
+              <DropdownMenuItem >
+               <span className="font-semibold">Joining Date - </span> {moment(user?.createdAt).format("DD / MM / YYYY")}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut />
                 Log out

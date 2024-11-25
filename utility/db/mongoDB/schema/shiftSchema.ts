@@ -8,6 +8,7 @@ interface ShiftDocument extends Document {
   startTime: string; // New field for start time
   endTime: string;   // New field for end time
   isApproved: boolean;
+  isOffered: { type: Boolean, default: false }, // New field for offering the shift
   status: "scheduled" | "completed" | "canceled";
   createdAt: Date;
   updatedAt: Date;
@@ -19,6 +20,7 @@ const shiftSchema = new mongoose.Schema<ShiftDocument>({
   startTime: { type: String, required: true }, // Start time as string (e.g., "09:00")
   endTime: { type: String, required: true },   // End time as string (e.g., "17:00")
   isApproved: { type: Boolean, default: false },
+  isOffered: { type: Boolean, default: false }, // New field for offering the shift
   status: { type: String, enum: ["scheduled", "completed", "canceled"], default: "scheduled" },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

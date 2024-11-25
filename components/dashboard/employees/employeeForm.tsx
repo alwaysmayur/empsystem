@@ -35,6 +35,7 @@ const EmployeeSchema = z.object({
   mobileNumber: z.string().min(1, "Mobile number is required"),
   address: z.string().optional(),
   jobRole: z.enum(["default", "food packer", "cashier", "kitchen"], { message: "Job role is required" }),
+  type: z.enum(["Full Time","Part Time"], { message: "type is required" }),
 });
 
 interface EmployeeFormProps {
@@ -64,7 +65,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       role: "employee", // Default to "employee"
       mobileNumber: "",
       address: "",
-      jobRole: "default", // Default job role
+      jobRole: "food packer", // Default job role
+      type: "Full Time", // Default job role
     },
   });
   
@@ -78,6 +80,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         mobileNumber: editingEmployee.mobileNumber,
         address: editingEmployee.address || "", // Optional address field
         jobRole: editingEmployee?.jobRole || "default", // Use optional chaining to safely access jobRole
+        type: editingEmployee?.type || "full-time", // Use optional chaining to safely access jobRole
       });
     }
   }, [editingEmployee, form]);
@@ -128,7 +131,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-auto ">
             <div className="space-y-4">
               {/* Name Field */}
               <FormField
@@ -201,6 +204,29 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                 )}
               />
 
+              {/* type Field */}
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <span>{field.value}</span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Full Time">Full Time</SelectItem>
+                          <SelectItem value="Part Time">Part Time</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage className="font-normal" />
+                  </FormItem>
+                )}
+              />
+
               {/* Job Role Field */}
               <FormField
                 control={form.control}
@@ -214,7 +240,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                           <span>{field.value}</span>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="default">Default</SelectItem>
                           <SelectItem value="food packer">Food Packer</SelectItem>
                           <SelectItem value="cashier">Cashier</SelectItem>
                           <SelectItem value="kitchen">Kitchen</SelectItem>

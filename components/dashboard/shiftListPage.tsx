@@ -37,6 +37,7 @@ const ShiftListPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]); // State for employee list
   const [selectedEmployee, setSelectedEmployee] = useState<string>(""); // Employee filter
+  const [selectedJobRole, setSelectedJobRole] = useState<string>("all"); // role filter
   const [startDate, setStartDate] = useState<string>(""); // Start date filter
   const [endDate, setEndDate] = useState<string>(""); // End date filter
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
@@ -64,6 +65,7 @@ const ShiftListPage = () => {
       body: JSON.stringify({
         startDate: selectedDate.format(),
         employeeId: selectedEmployee,
+        role: selectedJobRole,
         swap: false,
       }),
     });
@@ -118,7 +120,7 @@ const ShiftListPage = () => {
     fetchShifts();
     fetchEmployees();
     fetchSwapShifts();
-  }, [selectedEmployee, selectedDate, startDate, endDate]);
+  }, [selectedEmployee, selectedJobRole, selectedDate, startDate, endDate]);
 
   const handleDelete = async (id: string) => {
     const token = await getToken({
@@ -145,11 +147,6 @@ const ShiftListPage = () => {
   const handleDialogClose = () => {
     setEditingShift(null);
     setIsDialogOpen(false);
-  };
-
-  const handleDateClick = (date: Date) => {
-    console.log("Selected date:", date);
-    // Here, filter your data according to the selected date.
   };
 
   const [dropdownShiftId, setDropdownShiftId] = useState<string | null>(null); // Track which shift's dropdown is open
@@ -242,6 +239,9 @@ const ShiftListPage = () => {
     }
   };
 
+  console.log(user);
+  
+
   return (
     <div className="p-4">
       {user?.role == "admin" || user?.role == "hr" ? (
@@ -250,16 +250,35 @@ const ShiftListPage = () => {
 
           <Select value={selectedEmployee} onValueChange={handleSelectChange}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All" />
+              <SelectValue placeholder="All Employees" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">All Employees</SelectItem>
                 {employees?.map((employee) => (
                   <SelectItem key={employee._id} value={employee._id}>
                     {employee.name}
                   </SelectItem>
                 ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={selectedJobRole}
+            onValueChange={(value) => {
+              setSelectedJobRole(value);
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Roles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="food packer">Food Packer</SelectItem>
+                <SelectItem value="cashier">Cachier</SelectItem>
+                <SelectItem value="kitchen">Kitchen</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -275,6 +294,17 @@ const ShiftListPage = () => {
           >
             <span>Add Shift</span> <CirclePlus className="w-5 h-5" />
           </Button>
+
+          {user?.role == "admin" || user?.role == "hr" ? (
+            <Button
+              variant="outline"
+              className="flex justify-center bg-sky-100  items-center"
+            >
+              <span>{user.type == "Full Time" ?"Weekly hours time 48 hours" : "Weekly hours time 20 hours" }</span>
+            </Button>
+          ) : (
+            ""
+          )}
         </div>
       ) : (
         ""
@@ -396,7 +426,7 @@ const ShiftListPage = () => {
                             {shift.employeeId.name || "Shift Title"}
                           </h6>
                         </div>
-                            
+
                         {shift.swapRequests?.length > 0 &&
                         user.role === "employee" ? (
                           shift.swapRequests[0].status == "pending" &&
@@ -406,17 +436,17 @@ const ShiftListPage = () => {
                                 <p className="cursor-pointer text-sm  text-gray-800 rounded-md">
                                   {`${shift.swapRequests[0].user} wants to swap the shift `}
                                 </p>
-                               
                               </div>
-                             < div className="flex items-center content-center gap-2">
-                              <p className="cursor-pointer text-sm font-normal text-gray-500 rounded-md">
+                              <div className="flex items-center content-center gap-2">
+                                <p className="cursor-pointer text-sm font-normal text-gray-500 rounded-md">
                                   {`${moment(
                                     shift.swapRequests[0].shiftDate
                                   ).format("dddd, MMM Do")} `}
                                 </p>
                                 <p className="cursor-pointer text-sm font-normal text-gray-500 rounded-md">
                                   {`${shift.swapRequests[0].startTime} - ${shift.swapRequests[0].endTime}`}
-                                </p> </div>
+                                </p>{" "}
+                              </div>
                               <div className="flex gap-4 pt-2 ">
                                 <button
                                   onClick={() =>
@@ -460,15 +490,15 @@ const ShiftListPage = () => {
                                 </p>
                               </div>
                             </>
-                          ) :  shift.swapRequests[0].requesterId == shift.employeeId._id ? (
-                              <div className="flex ps-2 border-t py-2 justify-start items-center content-center mt-2 gap-4">
+                          ) : shift.swapRequests[0].requesterId ==
+                            shift.employeeId._id ? (
+                            <div className="flex ps-2 border-t py-2 justify-start items-center content-center mt-2 gap-4">
                               <p className="cursor-pointer bg-blue-500 text-md  text-white font-normal  px-2 rounded-sm">
                                 {`Swaped declined`}
                               </p>
-                            
                             </div>
                           ) : (
-                          ""
+                            ""
                           )
                         ) : null}
                       </div>

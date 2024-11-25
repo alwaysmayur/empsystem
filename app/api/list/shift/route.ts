@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse the request body to get the startDate, employeeId, and swap flag
-    const { startDate, employeeId, swap } = await request.json();
+    const { startDate, employeeId, role,swap } = await request.json();
     // Build the date filter based on startDate if provided
     let dateFilter: any = {};
     if (startDate) {
@@ -106,6 +106,13 @@ export async function POST(request: NextRequest) {
         // HR/Admin role-specific filtering
         if (employeeId && employeeId !== "all") {
           dateFilter.employeeId = employeeId;
+        }
+
+        if (role !== "all") {
+          const employeesWithRole = await UserModel.find({ jobRole: role }, "_id"); // Fetch employee IDs with the specified role
+          const employeeIds = employeesWithRole.map((e) => e._id); // Extract IDs
+        
+          dateFilter.employeeId = { $in: employeeIds }; // Filter shifts by these employee IDs
         }
 
         // Fetch shifts for the selected employee or all employees

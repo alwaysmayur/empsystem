@@ -11,6 +11,7 @@ interface UserDocument extends Document {
   mobileNumber: string; // Mobile number of the user
   address: string; // Address of the user
   jobRole: string; // New field for job role
+  type: string; // New field for job role
   createdAt: Date;
   comparePassword(password: string): Promise<boolean>;
 }
@@ -59,6 +60,10 @@ const userSchema = new mongoose.Schema<UserDocument>({
   jobRole: {
     type: String,
     enum: ["food packer", "cashier", "kitchen"], // Job roles allowed
+  },
+  type:{
+    type: String,
+    enum: ["Full Time","Part Time"], // Job roles allowed
   },
   createdAt: { type: Date, default: Date.now },
 });

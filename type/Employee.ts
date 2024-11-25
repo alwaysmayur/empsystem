@@ -6,5 +6,6 @@ export interface Employee {
   mobileNumber: string;
   address: string;
   jobRole: string; // New field for job role
+  type: string; // New field for job role
   password?: string; // Password remains optional
 }
