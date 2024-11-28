@@ -38,6 +38,9 @@ const SwapShiftDialog = ({
                   <p>
                     <strong>Status:</strong> {shift.status}
                   </p>
+                  <p>
+                    <strong>Job Role:</strong> {shift.employeeId.jobRole}
+                  </p>
                 </div>
                 <div className="space-x-2">
                   {user?.role === "employee" && shift.status === "scheduled" && (

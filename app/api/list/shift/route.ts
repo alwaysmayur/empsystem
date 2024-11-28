@@ -8,6 +8,7 @@ import moment from "moment";
 import SwapRequestModel from "@/utility/db/mongoDB/schema/swapRequestSchema";
 import UserModel from "@/utility/db/mongoDB/schema/userSchema";
 import dayjs from "dayjs";
+
 export async function POST(request: NextRequest) {
   try {
     // Connect to the database
@@ -33,10 +34,21 @@ export async function POST(request: NextRequest) {
     const currentDate = moment().startOf("day").toDate(); // Start of the current day
 
     if (swap) {
+      // Fetch the job role of the current user
+      const userJobRole = user.jobRole;
+
+      // Fetch all users with the same job role
+      const employeesWithMatchingRole = await UserModel.find(
+        { jobRole: userJobRole },
+        "_id"
+      );
+
+      const employeeIdsWithRole = employeesWithMatchingRole.map((e) => e._id);
+
       // Fetch shifts excluding those of the logged-in user and completed or canceled shifts
       shifts = await ShiftModel.find({
         shiftDate: { $gte: currentDate },
-        employeeId: { $ne: userId },
+        employeeId: { $ne: userId, $in: employeeIdsWithRole }, // Match job role
         status: { $nin: ["complete", "cancel"] },
         ...dateFilter,
       })
@@ -58,16 +70,13 @@ export async function POST(request: NextRequest) {
         shifts.map(async (shift: any) => {
           const relatedSwapRequests = swapRequests.filter(
             (swapRequest: any) =>
-              swapRequest.requesterShiftId.toString() ===
-                shift._id.toString() ||
+              swapRequest.requesterShiftId.toString() === shift._id.toString() ||
               swapRequest.requestedShiftId.toString() === shift._id.toString()
           );
 
           const swapRequestsWithUser = await Promise.all(
             relatedSwapRequests.map(async (swapRequest: any) => {
-              const userData = await UserModel.findById(
-                swapRequest.requesterId
-              );
+              const userData = await UserModel.findById(swapRequest.requesterId);
               return {
                 ...swapRequest.toObject(),
                 user: userData?.name || "Unknown User",
@@ -80,6 +89,10 @@ export async function POST(request: NextRequest) {
 
           return {
             ...shift.toObject(),
+            totalHours: calculateTotalHours(
+              shift.startTime,
+              shift.endTime
+            ), // Add total hours
             swapRequests: swapRequestsWithUser,
           };
         })
@@ -157,11 +170,21 @@ export async function POST(request: NextRequest) {
 
           return {
             ...shift.toObject(),
+            totalHours: calculateTotalHours(
+              shift.startTime,
+              shift.endTime
+            ), // Add total hours
             swapRequests: swapRequestsWithUser,
           };
         })
       );
     }
+
+    // Calculate total hours for all shifts
+    const totalHours = shifts.reduce(
+      (sum: number, shift: any) => sum + (shift.totalHours || 0),
+      0
+    );
 
     // Extract all unique dates from shifts and mark them as available
     const shiftDates = Array.from(
@@ -169,21 +192,17 @@ export async function POST(request: NextRequest) {
     );
 
     // Get the start (Monday) and end (Sunday) of the current week
-    // Start from the current date and end on the closest Friday
-    const startOfWeek = dayjs();
-    const endOfWeek = dayjs().endOf("week").subtract(1, "day"); // Adjust to Friday
+    const startOfWeek = dayjs().startOf("week");
+    const endOfWeek = startOfWeek.add(6, "day");
 
-    // Generate all dates of the current week excluding Saturday and Sunday
+    // Generate all dates of the current week
     const currentWeekDates = [];
     for (
       let date = startOfWeek;
       date.isBefore(endOfWeek) || date.isSame(endOfWeek);
       date = date.add(1, "day")
     ) {
-      // Exclude Saturday (6) and Sunday (0)
-      if (![6, 0].includes(date.day())) {
-        currentWeekDates.push(date.format("YYYY-MM-DD"));
-      }
+      currentWeekDates.push(date.format("YYYY-MM-DD"));
     }
 
     // Map currentWeekDates to include availability
@@ -194,11 +213,13 @@ export async function POST(request: NextRequest) {
           moment(shiftDate).isSame(moment(date, "YYYY-MM-DD"), "day") // Compare dates using Moment.js
       ),
     }));
-    // Return shifts along with the dates array
+
+    // Return shifts along with the dates array and total hours
     return NextResponse.json({
       status: 200,
       shifts,
       dates,
+      totalHours, // Include total hours in the response
     });
   } catch (error: unknown) {
     console.error("Get Shifts API Error ::", error);
@@ -207,4 +228,12 @@ export async function POST(request: NextRequest) {
       error: error instanceof Error ? error.message : "Failed to fetch shifts.",
     });
   }
+}
+
+// Helper function to calculate total hours
+function calculateTotalHours(startTime: string, endTime: string): number {
+  const start = moment(startTime, "HH:mm");
+  const end = moment(endTime, "HH:mm");
+  const duration = moment.duration(end.diff(start));
+  return duration.asHours();
 }

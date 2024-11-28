@@ -36,7 +36,7 @@ const ShiftListPage: any = (props) => {
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]); // State for employee list
-  const [selectedEmployee, setSelectedEmployee] = useState<string>(""); // Employee filter
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("all"); // Employee filter
   const [selectedJobRole, setSelectedJobRole] = useState<string>("all"); // role filter
   const [startDate, setStartDate] = useState<string>(""); // Start date filter
   const [endDate, setEndDate] = useState<string>(""); // End date filter
@@ -49,6 +49,8 @@ const ShiftListPage: any = (props) => {
 
   const [updateShiftsFlag, setupdateShiftsFlag] = useState(false);
 
+  const [shiftHours, setShiftHours] = useState<any>();
+  const [typeEmp, setTypeEmp] = useState<any>();
   const fetchShifts = async () => {
     const token = await getToken({
       req: { headers: { cookie: document.cookie } },
@@ -82,6 +84,7 @@ const ShiftListPage: any = (props) => {
     setAvailbleDates(data.dates);
     if (props.isOffeShift == false) {
       setShifts(data.shifts);
+      setShiftHours(data.totalHours)
     }
   };
 
@@ -126,7 +129,14 @@ const ShiftListPage: any = (props) => {
     fetchShifts();
     fetchEmployees();
     fetchSwapShifts();
-  }, [selectedEmployee, selectedJobRole, selectedDate, startDate, endDate,updateShiftsFlag]);
+  }, [
+    selectedEmployee,
+    selectedJobRole,
+    selectedDate,
+    startDate,
+    endDate,
+    updateShiftsFlag,
+  ]);
 
   const handleDelete = async (id: string) => {
     const token = await getToken({
@@ -162,6 +172,11 @@ const ShiftListPage: any = (props) => {
   };
 
   const handleSelectChange = (value: string) => {
+    let type = employees.filter(employee => employee._id == value);
+    if (type.length > 0) {
+      setTypeEmp(type[0].type)
+    }
+    
     setSelectedEmployee(value);
     // Optionally, you can handle filtering based on the selected employee
     // For example, you could trigger a re-fetch or filter a list of shifts here
@@ -246,7 +261,6 @@ const ShiftListPage: any = (props) => {
   };
 
   const handleOffer = async (shift: Shift) => {
-
     const token = await getToken({
       req: { headers: { cookie: document.cookie } },
     });
@@ -278,14 +292,13 @@ const ShiftListPage: any = (props) => {
         title: "Oops...",
         text: data.error,
       });
-      setupdateShiftsFlag(!updateShiftsFlag)
+      setupdateShiftsFlag(!updateShiftsFlag);
       // console.error("Failed to request swap", await res.text());
     }
 
     setIsSwapDialogOpen(false); // Close the swap dialog
     setSelectedSwapShift(null);
   };
-
 
   const handleOfferAccept = async (shift: Shift) => {
     const token = await getToken({
@@ -306,7 +319,6 @@ const ShiftListPage: any = (props) => {
     const data = await res.json();
 
     if (data.status == 200) {
-      
       Swal.fire({
         icon: "success",
         title: "Offer Accepted",
@@ -334,10 +346,11 @@ const ShiftListPage: any = (props) => {
           setShifts(data.shifts);
         }
       });
-  }, [props.isOffeShift,updateShiftsFlag]);
+  }, [props.isOffeShift, updateShiftsFlag]);
 
+  
   return (
-    
+    user ?
     <div className="p-4">
       {(user?.role == "admin" || user?.role == "hr") && !props.isOffeShift ? (
         <div className="flex gap-4 mb-4">
@@ -389,21 +402,6 @@ const ShiftListPage: any = (props) => {
           >
             <span>Add Shift</span> <CirclePlus className="w-5 h-5" />
           </Button>
-
-          {user?.role == "admin" || user?.role == "hr" ? (
-            <Button
-              variant="outline"
-              className="flex justify-center bg-sky-100  items-center"
-            >
-              <span>
-                {user.type == "Full Time"
-                  ? "Weekly hours time 48 hours"
-                  : "Weekly hours time 20 hours"}
-              </span>
-            </Button>
-          ) : (
-            ""
-          )}
         </div>
       ) : (
         ""
@@ -429,7 +427,7 @@ const ShiftListPage: any = (props) => {
           onEdit={handleEdit}
         /> */}
 
-        {(shifts.length > 0  && !props.isOffeShift) || props.isOffeShift}
+        {(shifts.length > 0 && !props.isOffeShift) || props.isOffeShift}
         <section
           className={`${
             !props.isOffeShift
@@ -445,11 +443,16 @@ const ShiftListPage: any = (props) => {
             <div className="col-span-12 xl:col-span-5">
               <div className="mb-6">
                 {!props.isOffeShift ? (
-                  <h2 className="text-3xl font-bold text-gray-900">
-                    {!selectedDate
-                      ? "Today's Shifts"
-                      : selectedDate.format("MMMM D, YYYY")}
-                  </h2>
+                  <div className="flex content-center items-center gap-4">
+                    <h2 className="text-3xl font-bold text-gray-900">
+                      Upcoming Shifts
+                    </h2>
+                    {
+                     ( user?.role !== "admin" && user?.role !== "hr") || selectedEmployee !== "all" ? 
+                      <p className="text-white bg-gray-900 px-2 py-0.5 rounded-md text-sm font-noraml">Working hours {typeEmp == "Full Time"? `${shiftHours}hr / 56hr` :  `${shiftHours}hr / 24hr` }</p>
+                      : ""
+                    }
+                  </div>
                 ) : (
                   <h2 className="text-xl font-bold text-gray-900">
                     Offered Shifts
@@ -460,7 +463,7 @@ const ShiftListPage: any = (props) => {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-y-3 h-80 pb-10 overflow-y-auto overflow-x-hidden pr-2">
+              <div className="flex flex-col gap-y-3 h-[480px] pb-10 overflow-y-auto overflow-x-hidden pr-2">
                 {shifts?.length > 0
                   ? shifts.map((shift: any) => (
                       <div key={shift._id} className=" rounded-xl bg-white">
@@ -519,33 +522,38 @@ const ShiftListPage: any = (props) => {
                                   </ul>
                                 ) : (
                                   <ul className="py-2">
-                                    
-                                    {
-                                      shift.isOffered ?    <li>
-                                      <button
-                                        className="block px-6 py-2 text-xs hover:bg-gray-100 text-gray-600 font-medium"
-                                        onClick={() => handleOfferAccept(shift)}
-                                      >
-                                        Accept
-                                      </button>
-                                    </li> :  <> <li>
-                                      <button
-                                        className="block px-6 py-2 text-xs hover:bg-gray-100 text-gray-600 font-medium"
-                                        onClick={() => handleSwap(shift)}
-                                      >
-                                        Swap
-                                      </button>
-                                    </li>
-                                    <li>
-                                      <button
-                                        className="block px-6 py-2 text-xs hover:bg-gray-100 text-gray-600 font-medium"
-                                        onClick={() => handleOffer(shift)}
-                                      >
-                                        Offer
-                                      </button>
-                                    </li></>
-                                    }
-                                   
+                                    {shift.isOffered ? (
+                                      <li>
+                                        <button
+                                          className="block px-6 py-2 text-xs hover:bg-gray-100 text-gray-600 font-medium"
+                                          onClick={() =>
+                                            handleOfferAccept(shift)
+                                          }
+                                        >
+                                          Accept
+                                        </button>
+                                      </li>
+                                    ) : (
+                                      <>
+                                        {" "}
+                                        <li>
+                                          <button
+                                            className="block px-6 py-2 text-xs hover:bg-gray-100 text-gray-600 font-medium"
+                                            onClick={() => handleSwap(shift)}
+                                          >
+                                            Swap
+                                          </button>
+                                        </li>
+                                        <li>
+                                          <button
+                                            className="block px-6 py-2 text-xs hover:bg-gray-100 text-gray-600 font-medium"
+                                            onClick={() => handleOffer(shift)}
+                                          >
+                                            Offer
+                                          </button>
+                                        </li>
+                                      </>
+                                    )}
                                   </ul>
                                 )}
                               </div>
@@ -680,7 +688,7 @@ const ShiftListPage: any = (props) => {
           />
         )}
       </div>
-    </div>
+    </div> : ""
   );
 };
 

@@ -88,6 +88,7 @@ const Dashboard: React.FC = () => {
   const [header, setHeader] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [states, setStates] = useState<StatItem[]>([]);
+  const [leaveChartData, setLeaveChartData] = useState<any>();
 
   const fetchUser = async () => {
     try {
@@ -128,7 +129,10 @@ const Dashboard: React.FC = () => {
     // Fetch Leave Data
     axios
       .post("/api/list/leave", { employee_id: "all" })
-      .then((res) => setLeaveData(res.data.leaveRequests))
+      .then((res) => {
+        setLeaveData(res.data.leaveRequests);
+        setLeaveChartData(res.data.chartData);
+      })
       .catch((err) => console.error(err));
 
     // Fetch Shift Data
@@ -243,9 +247,9 @@ const Dashboard: React.FC = () => {
     datasets: [
       {
         data: [
-          leaveData?.filter((leave) => leave.status === "Approved").length,
-          leaveData?.filter((leave) => leave.status === "Pending").length,
-          leaveData?.filter((leave) => leave.status === "Rejected").length,
+          leaveChartData?.filter((leave) => leave.status === "Approved").length,
+          leaveChartData?.filter((leave) => leave.status === "Pending").length,
+          leaveChartData?.filter((leave) => leave.status === "Rejected").length,
         ],
         backgroundColor: ["#4CAF50", "#FFC107", "#F44336"],
       },
@@ -319,7 +323,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             <Card className="flex w-full flex-col items-center content-center justify-center">
-              <CardHeader>Leave Status</CardHeader>
+              <CardHeader>Leave Status of November</CardHeader>
               <CardContent>
                 <Pie
                   style={{ width: "280px", height: "300px" }}
@@ -335,22 +339,22 @@ const Dashboard: React.FC = () => {
 
       <div className="flex flex-col w-full p-4 pt-0">
         <>
+          {user?.role !== "admin" && user?.role !== "hr" ? (
+            <ShiftListPage isOffeShift={false} />
+          ) : null}
           <div className="flex">
             <LeaveListPage pieChartData={pieChartData} />
             <div className="flex w-1/3 gap-4 p-4 pt-0">
               {employeeData ? <ShiftListPage isOffeShift={true} /> : null}
             </div>
           </div>
-          {user?.role !== "admin" && user?.role !== "hr" ? (
-            <ShiftListPage isOffeShift={false} />
-          ) : null}
         </>
       </div>
     </>
   ) : (
     <div className="flex justify-center items-center content-center w-[90%] h-screen">
-    <div className="w-10 h-10 border-4 border-t-gray-500 border-gray-300 rounded-full animate-spin"></div>
-  </div>
+      <div className="w-10 h-10 border-4 border-t-gray-500 border-gray-300 rounded-full animate-spin"></div>
+    </div>
   );
 };
 

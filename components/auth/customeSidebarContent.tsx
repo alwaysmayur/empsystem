@@ -82,17 +82,7 @@ export function CustomSidebarContent() {
           name: "Dashboard",
           url: "/dashboard",
           icon: LayoutDashboard,
-        },
-        {
-          name: "Shifts",
-          url: "/dashboard/shifts",
-          icon: Clock,
-        },
-        {
-          name: "Leaves",
-          url: "/dashboard/leaves",
-          icon: Caravan,
-        },
+        }
       ]);
     }
   }, [user]);

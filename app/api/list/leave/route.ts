@@ -35,9 +35,11 @@ export async function POST(request: NextRequest) {
     //     error: "Forbidden",
     //   });
     // }
+    let chartData ;
     if (user?.role == "admin" || user?.role == "hr") {
       if (employee_id == "all") {
-        leaveRequests = await LeaveRequestModel.find().sort({ createdAt: -1 }).populate("employeeId");
+        chartData = await LeaveRequestModel.find().sort({ createdAt: -1 }).populate("employeeId");
+        leaveRequests = await LeaveRequestModel.find({status:"Pending"}).sort({ createdAt: -1 }).populate("employeeId");
       } else {
         leaveRequests = await LeaveRequestModel.find({ employeeId: employee_id }).sort({ createdAt: -1 }).populate("employeeId");
       }
@@ -47,6 +49,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       status: 200,
       leaveRequests,
+      chartData
     });
   } catch (error) {
     console.error("Get Leave Requests API Error ::", error);

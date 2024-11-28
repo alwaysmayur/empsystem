@@ -76,6 +76,7 @@ const LeaveListPage = (pieData: any) => {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
+  
   const fetchLeaves = async () => {
     const token = await getToken({
       req: { headers: { cookie: document.cookie } },
@@ -99,6 +100,7 @@ const LeaveListPage = (pieData: any) => {
     }
 
     const data = await res.json();
+
     setLeaves(data.leaveRequests);
   };
 

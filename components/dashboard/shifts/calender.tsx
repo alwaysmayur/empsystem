@@ -49,6 +49,8 @@ const Calendar: React.FC<CalendarProps> = ({
       </div>
     ));
 
+    console.log({shifts});
+    
   const getShiftStatus = (date: Dayjs) => {
     const shift = shifts.find((shift) => dayjs(shift.date).isSame(date, "day"));
     return shift ? (shift.available ? "available" : "unavailable") : null;
@@ -72,7 +74,6 @@ const Calendar: React.FC<CalendarProps> = ({
           onClick={() => handleDateClick(day)}
           className={`flex aspect-square items-center justify-center p-2 sm:p-3.5 cursor-pointer border-r border-b border-indigo-200 transition-all duration-300 
         ${isCurrentMonth ? "" : "bg-gray-50"} 
-        ${isHoliday ? "bg-red-200" : ""} 
         ${isSelected ? "bg-gray-200" : ""} 
         ${shiftStatus === "available" ? "bg-green-200" : ""} 
         ${shiftStatus === "unavailable" ? "bg-yellow-200" : ""}`}
