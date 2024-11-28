@@ -35,18 +35,15 @@ export async function POST(request: NextRequest) {
     //     error: "Forbidden",
     //   });
     // }
-
     if (user?.role == "admin" || user?.role == "hr") {
-       if (employee_id == "all") {
-        
-         leaveRequests = await LeaveRequestModel.find().populate("employeeId");
-        }else{
-         leaveRequests = await LeaveRequestModel.find({employeeId:employee_id}).populate("employeeId");
-       }
-    }else{
-      leaveRequests = await LeaveRequestModel.find({employeeId:userId}).populate("employeeId");
+      if (employee_id == "all") {
+        leaveRequests = await LeaveRequestModel.find().sort({ createdAt: -1 }).populate("employeeId");
+      } else {
+        leaveRequests = await LeaveRequestModel.find({ employeeId: employee_id }).sort({ createdAt: -1 }).populate("employeeId");
+      }
+    } else {
+      leaveRequests = await LeaveRequestModel.find({ employeeId: userId }).sort({ createdAt: -1 }).populate("employeeId");
     }
-    
     return NextResponse.json({
       status: 200,
       leaveRequests,

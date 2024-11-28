@@ -64,7 +64,6 @@ const font = Poppins({
 
 const LeaveListPage = (pieData: any) => {
   const user: any = useUser();
-  console.log(pieData);
 
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -170,7 +169,7 @@ const LeaveListPage = (pieData: any) => {
   };
 
   return leaves?.length > 0 ? (
-    <div className="p-4">
+    <div className="p-4 w-full">
       <h1 className={cn("font-semibold text-xl mb-2", font.className)}>
         Leaves
       </h1>
@@ -226,14 +225,6 @@ const LeaveListPage = (pieData: any) => {
           onStatusUpdate={handleStatusUpdate} // Pass status update handler
           user={user}
         />
-        {pieData.pieChartData && (user?.role == "admin" || user?.role == "hr") ? (
-          <Card className="flex w-1/4 flex-col items-center content-center justify-center">
-            <CardHeader>Leave Status</CardHeader>
-            <CardContent>
-              <Pie data={pieData.pieChartData} />
-            </CardContent>
-          </Card>
-        ) : null}
       </div>
     </div>
   ) : (

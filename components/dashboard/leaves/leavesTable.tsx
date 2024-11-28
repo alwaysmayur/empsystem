@@ -56,100 +56,108 @@ export const LeaveTable: React.FC<TableProps> = ({
     <>
       {data?.length > 0 ? (
         <div className="relative w-full rounded max-h-96 overflow-y-auto">
-        <Table className="bg-gray-100 relative border-gray-900 rounded-xl ">
-          <TableHeader>
-            <TableRow>
-              {user?.role == "admin" || user?.role == "hr" ? (
-                <TableHead>Employee Name</TableHead>
-              ) : (
-                ""
-              )}
-              <TableHead>Leave Type</TableHead>
-              <TableHead>Start Date & Time</TableHead>
-              <TableHead>End Date & Time</TableHead>
-              <TableHead>Reason</TableHead>
-              <TableHead>Status</TableHead>
-              {user?.role == "admin" || user?.role == "hr" ? (
-                <TableHead>Actions</TableHead>
-              ) : (
-                ""
-              )}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((leave) => (
-              leave.status == "Pending" ? 
-              <TableRow key={leave._id}>
+          <Table className="bg-gray-100 relative border-gray-900 rounded-xl ">
+            <TableHeader>
+              <TableRow>
                 {user?.role == "admin" || user?.role == "hr" ? (
-                  <TableCell>{leave.employeeId.name}</TableCell>
+                  <TableHead>Employee Name</TableHead>
                 ) : (
                   ""
                 )}
-                {/* Render the employee's name */}
-                <TableCell>{leave.leaveType}</TableCell>
-                <TableCell>
-                  {new Date(leave.startDate).toLocaleDateString()}{" "}
-                  {leave?.startTime ? new Date(leave.startTime).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }):""}
-                </TableCell>
-                <TableCell>
-                  {new Date(leave.endDate).toLocaleDateString()}{" "}
-                  {leave?.endTime ? new Date(leave.endTime).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }): ""}
-                </TableCell>
-                <TableCell>{leave.reason}</TableCell>
-                <TableCell>{leave.status}</TableCell>
+                <TableHead>Leave Type</TableHead>
+                <TableHead>Start Date & Time</TableHead>
+                <TableHead>End Date & Time</TableHead>
+                <TableHead className="min-w-[150px]">Reason</TableHead>
+                <TableHead>Status</TableHead>
                 {user?.role == "admin" || user?.role == "hr" ? (
-                  <TableCell className="space-x-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Button
-                            variant="ghost"
-                            className="rounded-full py-0.5 px-2 hover:bg-green-400 hover:text-white text-green-500"
-                            onClick={() =>
-                              onStatusUpdate(leave._id, "Approved")
-                            }
-                          >
-                            <Check className="w-5 h-5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="border-gray-500 bg-white text-gay-800">
-                          <p>Approve</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                  <TableHead>Actions</TableHead>
+                ) : (
+                  ""
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((leave) =>
+               true ? (
+                  <TableRow key={leave._id}>
+                    {user?.role == "admin" || user?.role == "hr" ? (
+                      <TableCell>{leave.employeeId.name}</TableCell>
+                    ) : (
+                      ""
+                    )}
+                    
+                    {/* Render the employee's name */}
+                    <TableCell>{leave.leaveType}</TableCell>
+                    <TableCell>
+                      {new Date(leave.startDate).toLocaleDateString()}{" "}
+                      {leave?.startTime
+                        ? new Date(leave.startTime).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : ""}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(leave.endDate).toLocaleDateString()}{" "}
+                      {leave?.endTime
+                        ? new Date(leave.endTime).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : ""}
+                    </TableCell>
+                    <TableCell>{leave.reason}</TableCell>
+                    <TableCell>{leave.status}</TableCell>
+                    {user?.role == "admin" || user?.role == "hr" ? (
+                      <TableCell className="space-x-2">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Button
+                                variant="ghost"
+                                className="rounded-full py-0.5 px-2 hover:bg-green-400 hover:text-white text-green-500"
+                                onClick={() =>
+                                  onStatusUpdate(leave._id, "Approved")
+                                }
+                              >
+                                <Check className="w-5 h-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="border-gray-500 bg-white text-gay-800">
+                              <p>Approve</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
 
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Button
-                            variant={"ghost"}
-                            className="rounded-full py-0.5 px-2 hover:bg-red-400 hover:text-white text-red-500"
-                            onClick={() =>
-                              onStatusUpdate(leave._id, "Rejected")
-                            }
-                          >
-                            <X className="w-5 h-5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="border-gray-500 bg-white text-gay-800">
-                          <p>Reject</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </TableCell>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Button
+                                variant={"ghost"}
+                                className="rounded-full py-0.5 px-2 hover:bg-red-400 hover:text-white text-red-500"
+                                onClick={() =>
+                                  onStatusUpdate(leave._id, "Rejected")
+                                }
+                              >
+                                <X className="w-5 h-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="border-gray-500 bg-white text-gay-800">
+                              <p>Reject</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                    ) : (
+                      ""
+                    )}
+                  </TableRow>
                 ) : (
                   ""
-                )}
-              </TableRow> : ""
-            ))}
-          </TableBody>
-        </Table>
+                )
+              )}
+            </TableBody>
+          </Table>
         </div>
       ) : (
         <div>No leave requests available.</div>

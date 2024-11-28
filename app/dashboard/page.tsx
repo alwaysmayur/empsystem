@@ -6,6 +6,24 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
+
+import { Button } from "@/components/ui/button"; // Adjust the import based on your structure
+
+import { Check, X } from "lucide-react"; // Icons
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"; // Import Shadcn table components
+import {
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import DashboardStats from "@/components/dashboard/dashboardStats";
@@ -31,8 +49,8 @@ import {
 import { Bar, Pie, Line } from "react-chartjs-2";
 import axios from "axios";
 import { Card, CardContent, CardHeader } from "@/components/ui/card"; // Assuming Shadcn UI components
-import moment from "moment";
 
+import ShiftListPage from "@/components/dashboard/shiftListPage";
 // Register Chart.js elements
 ChartJS.register(
   ArcElement, // For Pie/Donut charts
@@ -128,25 +146,44 @@ const Dashboard: React.FC = () => {
         const response = await fetch("/api/list/employee");
         const { employees, status } = await response.json();
         setEmployeeData(employees);
-
         if (status === 200) {
-          // Group employees by month-year in the frontend
+          // Group employees by single month
           const groupedData = employees.reduce((acc: any, employee: any) => {
             const createdAt = new Date(employee.createdAt);
-            const monthYear = `${
-              createdAt.getMonth() + 1
-            }-${createdAt.getFullYear()}`;
+            const month = createdAt.getMonth(); // 0-based index for month
+            const year = createdAt.getFullYear();
+            const key = `${month}-${year}`;
 
-            if (!acc[monthYear]) {
-              acc[monthYear] = 0;
+            if (!acc[key]) {
+              acc[key] = 0;
             }
 
-            acc[monthYear]++;
+            acc[key]++;
             return acc;
           }, {});
 
-          const labels = Object.keys(groupedData);
-          const counts = Object.values(groupedData);
+          // Convert data to format for the chart
+          const monthNames = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+          ];
+
+          const labels = Object.keys(groupedData).map((key) => {
+            const [month, year] = key.split("-");
+            return `${monthNames[parseInt(month)]} ${year}`; // Month name + year
+          });
+
+          const counts = Object.values(groupedData); // [5, 10, ...]
 
           setChartData({
             labels,
@@ -154,7 +191,9 @@ const Dashboard: React.FC = () => {
               {
                 label: "Employee Count",
                 data: counts,
-                backgroundColor: "rgba(75, 192, 192, 0.5)",
+                borderColor: "rgba(75, 192, 192, 1)",
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                fill: "start", // Fill under the line
               },
             ],
           });
@@ -167,13 +206,20 @@ const Dashboard: React.FC = () => {
     fetchEmployeeData();
   }, []);
 
-  // if (!chartData) return <div>Loading...</div>;
-
   const options = {
     responsive: true,
     plugins: {
       legend: { position: "top" as const },
-      title: { display: true, text: "Monthly Employee Count" },
+      title: {
+        display: true,
+        text: "Employee Count by Month",
+      },
+      filler: {
+        propagate: false,
+      },
+    },
+    interaction: {
+      intersect: false,
     },
   };
 
@@ -208,7 +254,7 @@ const Dashboard: React.FC = () => {
 
   const barChartData = {
     labels: employeeData
-      .filter((emp: any) => emp.role !== "admin") // Exclude admin
+      .filter((emp: any) => emp.role !== "admin")
       .map((emp) => emp.name),
     datasets: ["Food Packer", "Cashier", "Kitchen"].map((role) => ({
       label: role,
@@ -226,15 +272,7 @@ const Dashboard: React.FC = () => {
     })),
   };
 
-  const [offeredShifts, setOfferedShifts] = useState([]);
-
-  useEffect(() => {
-    fetch("/api/shift/getOfferedShifts")
-      .then((res) => res.json())
-      .then((data) => setOfferedShifts(data.shifts));
-  }, []);
-  
-  return (
+  return chartData && pieChartData ? (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2">
         <div className="flex items-center gap-2 px-4">
@@ -253,63 +291,39 @@ const Dashboard: React.FC = () => {
           </Breadcrumb>
         </div>
       </header>
-      {user?.role !== "admin" && user?.role !== "hr" ? (
-      <div className="mx-6">
-        <DashboardStats
-          header={header}
-          description={description}
-          stats={states}
-        />
-        {user?.role !== "admin" && user?.role !== "hr" ? (
-          <div className="flex pt-5 justify-center">
-            <img src="/team.svg" className="w-96" alt="" />
-          </div>
-        ) : null}
-      </div>):""}
+      {/* {user?.role !== "admin" && user?.role !== "hr" ? (
+        <div className="mx-6">
+          <DashboardStats
+            header={header}
+            description={description}
+            stats={states}
+          />
+          {user?.role !== "admin" && user?.role !== "hr" ? (
+            <div className="flex pt-5 justify-center">
+              <img src="/team.svg" className="w-96" alt="" />
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        ""
+      )} */}
 
-      <div className="flex w-full gap-4 p-4 pt-0">
-      {user?.role == "admin" || user?.role == "hr" ? (
-        <LeaveListPage pieChartData={pieChartData} />) : null}
-        {/* <div className="">
-           <Card className="flex w-full flex-col items-center content-center justify-center">
-          <CardHeader>Leave Status</CardHeader>
-          <CardContent>
-            <Pie data={pieChartData} />
-          </CardContent>
-        </Card>
-        </div> */}
-      </div>
       {user?.role == "admin" || user?.role == "hr" ? (
         <div className="p-6 gap-2 w-full justify-center flex-col">
           <div className="flex  gap-12 ">
             <Card className="flex w-full flex-col items-center content-center justify-center">
               <CardHeader>Employees</CardHeader>
-              <CardContent style={{ width: "380px", height: "300px" }}>
-                {chartData && <Bar options={options} data={chartData} />}
+              <CardContent style={{ width: "580px", height: "300px" }}>
+                {chartData && <Line data={chartData} options={options} />}
               </CardContent>
             </Card>
-            <Card className="flex w-full flex-col  items-center content-center justify-center">
-              <CardHeader>Shifts Per Employee</CardHeader>
-              <CardContent style={{ width: "380px", height: "300px" }}>
-                <Bar
-                  data={barChartData}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      title: {
-                        display: true,
-                        text: "Shifts Assigned by Role",
-                      },
-                    },
-                    scales: {
-                      x: {
-                        stacked: true,
-                      },
-                      y: {
-                        stacked: true,
-                      },
-                    },
-                  }}
+
+            <Card className="flex w-full flex-col items-center content-center justify-center">
+              <CardHeader>Leave Status</CardHeader>
+              <CardContent>
+                <Pie
+                  style={{ width: "280px", height: "300px" }}
+                  data={pieChartData}
                 />
               </CardContent>
             </Card>
@@ -318,7 +332,25 @@ const Dashboard: React.FC = () => {
       ) : (
         ""
       )}
+
+      <div className="flex flex-col w-full p-4 pt-0">
+        <>
+          <div className="flex">
+            <LeaveListPage pieChartData={pieChartData} />
+            <div className="flex w-1/3 gap-4 p-4 pt-0">
+              {employeeData ? <ShiftListPage isOffeShift={true} /> : null}
+            </div>
+          </div>
+          {user?.role !== "admin" && user?.role !== "hr" ? (
+            <ShiftListPage isOffeShift={false} />
+          ) : null}
+        </>
+      </div>
     </>
+  ) : (
+    <div className="flex justify-center items-center content-center w-[90%] h-screen">
+    <div className="w-10 h-10 border-4 border-t-gray-500 border-gray-300 rounded-full animate-spin"></div>
+  </div>
   );
 };
 

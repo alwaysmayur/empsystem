@@ -2,12 +2,12 @@ import { NextResponse, NextRequest } from "next/server";
 import ShiftModel from "@/utility/db/mongoDB/schema/shiftSchema";
 import connectDB from "@/utility/db/mongoDB/connection";
 import { getDataFromToken } from "@/helper/getDataFromToken";
-import employeedb from "@/utility/db/mongoDB/schema/userSchema"; // Adjust the import path as necessary
+import employeedb from "@/utility/db/mongoDB/schema/userSchema";
 import { Employee } from "@/type/Employee";
 import moment from "moment";
-import SwapRequestModel from "@/utility/db/mongoDB/schema/swapRequestSchema"; // Import the SwapRequestModel
+import SwapRequestModel from "@/utility/db/mongoDB/schema/swapRequestSchema";
 import UserModel from "@/utility/db/mongoDB/schema/userSchema";
-
+import dayjs from "dayjs";
 export async function POST(request: NextRequest) {
   try {
     // Connect to the database
@@ -25,31 +25,27 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Parse the request body to get the startDate, employeeId, and swap flag
-    const { startDate, employeeId, role,swap } = await request.json();
-    // Build the date filter based on startDate if provided
+    // Parse the request body to get the startDate, employeeId, role, and swap flag
+    const { startDate, employeeId, role, swap } = await request.json();
     let dateFilter: any = {};
-    if (startDate) {
-      dateFilter.shiftDate = moment(startDate).format("YYYY-MM-DD");
-    }
-
     let shifts: any;
     let shiftIds: any[] = [];
+    const currentDate = moment().startOf("day").toDate(); // Start of the current day
 
     if (swap) {
-      const currentDate = moment().startOf("day").toDate();
-      // For swap, exclude shifts where the logged-in user is the employee and exclude "complete" or "cancel" statuses
+      // Fetch shifts excluding those of the logged-in user and completed or canceled shifts
       shifts = await ShiftModel.find({
+        shiftDate: { $gte: currentDate },
+        employeeId: { $ne: userId },
+        status: { $nin: ["complete", "cancel"] },
         ...dateFilter,
-        shiftDate: { $gte: currentDate }, // Filter shifts with shiftDate >= current date
-        employeeId: { $ne: userId }, // Exclude shifts with the logged-in user's ID
-        status: { $nin: ["complete", "cancel"] }, // Exclude "complete" and "cancel" statuses
-      }).populate("employeeId").sort( { "shiftDate": 1 } );
+      })
+        .populate("employeeId")
+        .sort({ shiftDate: 1 });
 
-      // Collect shift IDs to fetch related swap requests
       shiftIds = shifts.map((shift: any) => shift._id);
 
-      // Fetch related swap requests for each shift
+      // Fetch related swap requests
       const swapRequests = await SwapRequestModel.find({
         $or: [
           { requesterShiftId: { $in: shiftIds } },
@@ -67,7 +63,6 @@ export async function POST(request: NextRequest) {
               swapRequest.requestedShiftId.toString() === shift._id.toString()
           );
 
-          // Fetch user data for each swap request and add it to the response
           const swapRequestsWithUser = await Promise.all(
             relatedSwapRequests.map(async (swapRequest: any) => {
               const userData = await UserModel.findById(
@@ -75,10 +70,10 @@ export async function POST(request: NextRequest) {
               );
               return {
                 ...swapRequest.toObject(),
-                user: userData?.name || "Unknown User", // Add requester name
+                user: userData?.name || "Unknown User",
                 shiftDate: moment(
                   swapRequest.requesterShiftId.shiftDate
-                ).format("YYYY-MM-DD"), // Add shift date
+                ).format("YYYY-MM-DD"),
               };
             })
           );
@@ -90,43 +85,40 @@ export async function POST(request: NextRequest) {
         })
       );
     } else {
-      const currentDate = moment().startOf("day").toDate(); // Start of the current day
-      const weekEnd = moment().endOf("week").toDate(); // End of the current week
+      const weekEnd = moment().endOf("week").toDate();
 
-      // Check if `startDate` is provided
       if (startDate && !moment(startDate).isSame(currentDate, "day")) {
-        // If startDate is provided, return shifts only for that specific date
         dateFilter.shiftDate = moment(startDate).format("YYYY-MM-DD");
       } else {
-        // Default filter: current week shifts and greater than today
         dateFilter.shiftDate = { $gte: currentDate, $lte: weekEnd };
       }
 
       if (user.role === "hr" || user.role === "admin") {
-        // HR/Admin role-specific filtering
         if (employeeId && employeeId !== "all") {
           dateFilter.employeeId = employeeId;
         }
 
         if (role !== "all") {
-          const employeesWithRole = await UserModel.find({ jobRole: role }, "_id"); // Fetch employee IDs with the specified role
-          const employeeIds = employeesWithRole.map((e) => e._id); // Extract IDs
-        
-          dateFilter.employeeId = { $in: employeeIds }; // Filter shifts by these employee IDs
+          const employeesWithRole = await UserModel.find(
+            { jobRole: role },
+            "_id"
+          );
+          const employeeIds = employeesWithRole.map((e) => e._id);
+          dateFilter.employeeId = { $in: employeeIds };
         }
 
-        // Fetch shifts for the selected employee or all employees
-        shifts = await ShiftModel.find(dateFilter).populate("employeeId").sort( { "shiftDate": 1 } );
+        shifts = await ShiftModel.find(dateFilter)
+          .populate("employeeId")
+          .sort({ shiftDate: 1 });
       } else {
-        // Non-HR/Admin users can only see their own shifts
         dateFilter.employeeId = userId;
-        shifts = await ShiftModel.find(dateFilter).populate("employeeId").sort( { "shiftDate": 1 } );
+        shifts = await ShiftModel.find(dateFilter)
+          .populate("employeeId")
+          .sort({ shiftDate: 1 });
       }
 
-      // Collect shift IDs to fetch related swap requests
       shiftIds = shifts.map((shift: any) => shift._id);
 
-      // Fetch related swap requests
       const swapRequests = await SwapRequestModel.find({
         $or: [
           { requesterShiftId: { $in: shiftIds } },
@@ -134,31 +126,31 @@ export async function POST(request: NextRequest) {
         ],
       });
 
-
-      // Add swap request data to each shift
       shifts = await Promise.all(
         shifts.map(async (shift: any) => {
           const relatedSwapRequests = swapRequests.filter(
             (swapRequest: any) =>
-              swapRequest.requesterShiftId.toString() === shift._id.toString() ||
+              swapRequest.requesterShiftId.toString() ===
+                shift._id.toString() ||
               swapRequest.requestedShiftId.toString() === shift._id.toString()
           );
 
-          // Fetch user data for each swap request and add it to the response
           const swapRequestsWithUser = await Promise.all(
             relatedSwapRequests.map(async (swapRequest: any) => {
               const userData = await UserModel.findById(
                 swapRequest.requesterId
               );
-              const getShiftData = await ShiftModel.findById(swapRequest.requesterShiftId.toString());
+              const getShiftData = await ShiftModel.findById(
+                swapRequest.requesterShiftId.toString()
+              );
               return {
                 ...swapRequest.toObject(),
-                startTime:getShiftData.startTime,
-                endTime: getShiftData.endTime,
-                user: userData?.name || "Unknown User", // Add requester name
+                startTime: getShiftData?.startTime,
+                endTime: getShiftData?.endTime,
+                user: userData?.name || "Unknown User",
                 shiftDate: moment(
                   swapRequest.requesterShiftId.shiftDate
-                ).format("YYYY-MM-DD"), // Add shift date
+                ).format("YYYY-MM-DD"),
               };
             })
           );
@@ -171,10 +163,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return the shifts response with swap requests inside each shift
+    // Extract all unique dates from shifts and mark them as available
+    const shiftDates = Array.from(
+      new Set(shifts.map((shift: any) => shift.shiftDate))
+    );
+
+    // Get the start (Monday) and end (Sunday) of the current week
+    // Start from the current date and end on the closest Friday
+    const startOfWeek = dayjs();
+    const endOfWeek = dayjs().endOf("week").subtract(1, "day"); // Adjust to Friday
+
+    // Generate all dates of the current week excluding Saturday and Sunday
+    const currentWeekDates = [];
+    for (
+      let date = startOfWeek;
+      date.isBefore(endOfWeek) || date.isSame(endOfWeek);
+      date = date.add(1, "day")
+    ) {
+      // Exclude Saturday (6) and Sunday (0)
+      if (![6, 0].includes(date.day())) {
+        currentWeekDates.push(date.format("YYYY-MM-DD"));
+      }
+    }
+
+    // Map currentWeekDates to include availability
+    const dates = currentWeekDates.map((date) => ({
+      date,
+      available: shiftDates.some(
+        (shiftDate) =>
+          moment(shiftDate).isSame(moment(date, "YYYY-MM-DD"), "day") // Compare dates using Moment.js
+      ),
+    }));
+    // Return shifts along with the dates array
     return NextResponse.json({
       status: 200,
       shifts,
+      dates,
     });
   } catch (error: unknown) {
     console.error("Get Shifts API Error ::", error);

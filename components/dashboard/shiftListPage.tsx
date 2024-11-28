@@ -28,7 +28,7 @@ import { useUser } from "@/app/context/UseContex"; // Assuming you have a user c
 
 import Swal from "sweetalert2";
 
-const ShiftListPage = () => {
+const ShiftListPage: any = (props) => {
   const user: any = useUser();
   const [allShifts, setAllShifts] = useState<Shift[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -44,7 +44,10 @@ const ShiftListPage = () => {
   const [isSwapDialogOpen, setIsSwapDialogOpen] = useState(false);
   const [selectedSwapShift, setSelectedSwapShift] = useState<Shift | null>(
     null
-  ); // State for the shift being swapped
+  );
+  const [availbleDates, setAvailbleDates] = useState<any>();
+
+  const [updateShiftsFlag, setupdateShiftsFlag] = useState(false);
 
   const fetchShifts = async () => {
     const token = await getToken({
@@ -76,7 +79,10 @@ const ShiftListPage = () => {
     }
 
     const data = await res.json();
-    setShifts(data.shifts);
+    setAvailbleDates(data.dates);
+    if (props.isOffeShift == false) {
+      setShifts(data.shifts);
+    }
   };
 
   const fetchSwapShifts = async () => {
@@ -120,7 +126,7 @@ const ShiftListPage = () => {
     fetchShifts();
     fetchEmployees();
     fetchSwapShifts();
-  }, [selectedEmployee, selectedJobRole, selectedDate, startDate, endDate]);
+  }, [selectedEmployee, selectedJobRole, selectedDate, startDate, endDate,updateShiftsFlag]);
 
   const handleDelete = async (id: string) => {
     const token = await getToken({
@@ -239,12 +245,101 @@ const ShiftListPage = () => {
     }
   };
 
-  console.log(user);
-  
+  const handleOffer = async (shift: Shift) => {
+
+    const token = await getToken({
+      req: { headers: { cookie: document.cookie } },
+    });
+
+    const res = await fetch(`/api/shift/createOffer`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        shiftId: shift._id,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.status == 201) {
+      console.log(`Swap requested for shift `);
+      Swal.fire({
+        icon: "success",
+        title: "Offer created",
+        text: "you offer is created",
+      });
+      fetchShifts(); // Refresh the shifts after the request
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: data.error,
+      });
+      setupdateShiftsFlag(!updateShiftsFlag)
+      // console.error("Failed to request swap", await res.text());
+    }
+
+    setIsSwapDialogOpen(false); // Close the swap dialog
+    setSelectedSwapShift(null);
+  };
+
+
+  const handleOfferAccept = async (shift: Shift) => {
+    const token = await getToken({
+      req: { headers: { cookie: document.cookie } },
+    });
+
+    const res = await fetch(`/api/shift/accept`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        offerId: shift._id,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.status == 200) {
+      
+      Swal.fire({
+        icon: "success",
+        title: "Offer Accepted",
+        text: "Shift is accepted by you",
+      });
+      fetchShifts(); // Refresh the shifts after the request
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: data.error,
+      });
+
+      // console.error("Failed to request swap", await res.text());
+    }
+    setIsSwapDialogOpen(false); // Close the swap dialog
+    setSelectedSwapShift(null);
+  };
+
+  useEffect(() => {
+    fetch("/api/shift/getOfferedShifts")
+      .then((res) => res.json())
+      .then((data) => {
+        if (props.isOffeShift) {
+          setShifts(data.shifts);
+        }
+      });
+  }, [props.isOffeShift,updateShiftsFlag]);
 
   return (
+    
     <div className="p-4">
-      {user?.role == "admin" || user?.role == "hr" ? (
+      {(user?.role == "admin" || user?.role == "hr") && !props.isOffeShift ? (
         <div className="flex gap-4 mb-4">
           {/* Date Range Filters */}
 
@@ -300,7 +395,11 @@ const ShiftListPage = () => {
               variant="outline"
               className="flex justify-center bg-sky-100  items-center"
             >
-              <span>{user.type == "Full Time" ?"Weekly hours time 48 hours" : "Weekly hours time 20 hours" }</span>
+              <span>
+                {user.type == "Full Time"
+                  ? "Weekly hours time 48 hours"
+                  : "Weekly hours time 20 hours"}
+              </span>
             </Button>
           ) : (
             ""
@@ -329,21 +428,39 @@ const ShiftListPage = () => {
           onDelete={handleDelete}
           onEdit={handleEdit}
         /> */}
-        <section className="relative bg-gray-100 rounded-xl shadow-lg p-6 sm:p-10 mx-auto">
-          <div className="grid grid-cols-12 gap-8">
+
+        {(shifts.length > 0  && !props.isOffeShift) || props.isOffeShift}
+        <section
+          className={`${
+            !props.isOffeShift
+              ? "relative bg-gray-100 w-auto rounded-xl shadow-lg p-6 sm:p-10  mx-auto"
+              : "relative bg-gray-100 w-auto rounded-xl shadow-lg p-6 sm:p-3 mx-auto"
+          }`}
+        >
+          <div
+            className={`${
+              !props.isOffeShift ? "grid grid-cols-12 gap-8" : " "
+            }`}
+          >
             <div className="col-span-12 xl:col-span-5">
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-900">
-                  {!selectedDate
-                    ? "Today's Shifts"
-                    : selectedDate.format("MMMM D, YYYY")}
-                </h2>
-                <p className="text-lg text-gray-600">
+                {!props.isOffeShift ? (
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    {!selectedDate
+                      ? "Today's Shifts"
+                      : selectedDate.format("MMMM D, YYYY")}
+                  </h2>
+                ) : (
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Offered Shifts
+                  </h2>
+                )}
+                <p className="text-sm text-gray-600">
                   Don’t miss your schedule
                 </p>
               </div>
 
-              <div className="flex flex-col gap-y-3 h-[480px] pb-10 overflow-y-auto overflow-x-hidden pr-2">
+              <div className="flex flex-col gap-y-3 h-80 pb-10 overflow-y-auto overflow-x-hidden pr-2">
                 {shifts?.length > 0
                   ? shifts.map((shift: any) => (
                       <div key={shift._id} className=" rounded-xl bg-white">
@@ -402,7 +519,16 @@ const ShiftListPage = () => {
                                   </ul>
                                 ) : (
                                   <ul className="py-2">
-                                    <li>
+                                    
+                                    {
+                                      shift.isOffered ?    <li>
+                                      <button
+                                        className="block px-6 py-2 text-xs hover:bg-gray-100 text-gray-600 font-medium"
+                                        onClick={() => handleOfferAccept(shift)}
+                                      >
+                                        Accept
+                                      </button>
+                                    </li> :  <> <li>
                                       <button
                                         className="block px-6 py-2 text-xs hover:bg-gray-100 text-gray-600 font-medium"
                                         onClick={() => handleSwap(shift)}
@@ -410,6 +536,16 @@ const ShiftListPage = () => {
                                         Swap
                                       </button>
                                     </li>
+                                    <li>
+                                      <button
+                                        className="block px-6 py-2 text-xs hover:bg-gray-100 text-gray-600 font-medium"
+                                        onClick={() => handleOffer(shift)}
+                                      >
+                                        Offer
+                                      </button>
+                                    </li></>
+                                    }
+                                   
                                   </ul>
                                 )}
                               </div>
@@ -426,6 +562,16 @@ const ShiftListPage = () => {
                             {shift.employeeId.name || "Shift Title"}
                           </h6>
                         </div>
+
+                        {shift.isOffered ? (
+                          <div className="flex ps-2 border-t py-2 justify-start items-center content-center mt-2 gap-4">
+                            <p className="cursor-pointer bg-blue-500 text-md  text-white font-normal  px-2 rounded-sm">
+                              {`Shift is Offered`}
+                            </p>
+                          </div>
+                        ) : (
+                          ""
+                        )}
 
                         {shift.swapRequests?.length > 0 &&
                         user.role === "employee" ? (
@@ -506,10 +652,16 @@ const ShiftListPage = () => {
                   : "No shifts available"}
               </div>
             </div>
-            <CustomeCalendar
-              setSelectedDate={setSelectedDate}
-              selectedDate={selectedDate}
-            />
+
+            {!props.isOffeShift && availbleDates ? (
+              <CustomeCalendar
+                setSelectedDate={setSelectedDate}
+                selectedDate={selectedDate}
+                shifts={availbleDates}
+              />
+            ) : (
+              ""
+            )}
           </div>
         </section>
 
