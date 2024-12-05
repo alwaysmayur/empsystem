@@ -70,8 +70,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     },
   });
   
+  
   // Automatically populate the form if editingEmployee is passed
   useEffect(() => {
+    
     if (editingEmployee) {
       form.reset({
         name: editingEmployee.name,
@@ -80,7 +82,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         mobileNumber: editingEmployee.mobileNumber,
         address: editingEmployee.address || "", // Optional address field
         jobRole: editingEmployee?.jobRole || "default", // Use optional chaining to safely access jobRole
-        type: editingEmployee?.type || "full-time", // Use optional chaining to safely access jobRole
+        type: editingEmployee.type === "Full Time" ? "Full Time" : "Part Time",
       });
     }
   }, [editingEmployee, form]);
