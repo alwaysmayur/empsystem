@@ -466,7 +466,9 @@ const ShiftListPage: any = (props) => {
               <div className="flex flex-col gap-y-3 h-[480px] pb-10 overflow-y-auto overflow-x-hidden pr-2">
                 {shifts?.length > 0
                   ? shifts.map((shift: any) => (
+                    
                       <div key={shift._id} className=" rounded-xl bg-white">
+                     
                         <div className=" m-3 rounded-xl">
                           <div className="flex items-center justify-between mb-3">
                             <p className="text-md  font-bold text-gray-600 ">
@@ -580,11 +582,11 @@ const ShiftListPage: any = (props) => {
                         ) : (
                           ""
                         )}
-
+                      
+                        
                         {shift.swapRequests?.length > 0 &&
                         user.role === "employee" ? (
-                          shift.swapRequests[0].status == "pending" &&
-                          shift.swapRequests[0].requesterId !== user._id ? (
+                          shift.swapRequests[0].status == "pending" && shift.swapRequests[0].requesterId !== user._id ? (
                             <div className="px-3 pb-3 ">
                               <div className="flex items-center content-center gap-2">
                                 <p className="cursor-pointer text-sm  text-gray-800 rounded-md">
@@ -644,7 +646,7 @@ const ShiftListPage: any = (props) => {
                                 </p>
                               </div>
                             </>
-                          ) : shift.swapRequests[0].requesterId ==
+                          ) : shift.swapRequests[0].status !== "approved" && shift.swapRequests[0].requesterId ==
                             shift.employeeId._id ? (
                             <div className="flex ps-2 border-t py-2 justify-start items-center content-center mt-2 gap-4">
                               <p className="cursor-pointer bg-blue-500 text-md  text-white font-normal  px-2 rounded-sm">

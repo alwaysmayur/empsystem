@@ -49,7 +49,6 @@ const Calendar: React.FC<CalendarProps> = ({
       </div>
     ));
 
-    console.log({shifts});
     
   const getShiftStatus = (date: Dayjs) => {
     const shift = shifts.find((shift) => dayjs(shift.date).isSame(date, "day"));
