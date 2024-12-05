@@ -344,7 +344,7 @@ const Dashboard: React.FC = () => {
           ) : null}
           <div className="flex">
             <LeaveListPage pieChartData={pieChartData} />
-            <div className="flex w-1/3 gap-4 p-4 pt-0">
+            <div className="flex w-1/3 mt-20 h-auto gap-4 p-4 pt-0">
               {employeeData ? <ShiftListPage isOffeShift={true} /> : null}
             </div>
           </div>
