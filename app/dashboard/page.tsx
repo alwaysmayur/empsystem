@@ -295,6 +295,7 @@ const Dashboard: React.FC = () => {
           </Breadcrumb>
         </div>
       </header>
+      
       {/* {user?.role !== "admin" && user?.role !== "hr" ? (
         <div className="mx-6">
           <DashboardStats
@@ -323,7 +324,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             <Card className="flex w-full flex-col items-center content-center justify-center">
-              <CardHeader>Leave Status of November</CardHeader>
+              <CardHeader>Leave Status of December</CardHeader>
               <CardContent>
                 <Pie
                   style={{ width: "280px", height: "300px" }}

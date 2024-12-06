@@ -583,7 +583,6 @@ const ShiftListPage: any = (props) => {
                           ""
                         )}
                       
-                        
                         {shift.swapRequests?.length > 0 &&
                         user.role === "employee" ? (
                           shift.swapRequests[0].status == "pending" && shift.swapRequests[0].requesterId !== user._id ? (

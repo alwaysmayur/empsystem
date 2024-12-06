@@ -7,6 +7,7 @@ const font = Poppins({
   subsets: ["latin"],
   weight: ["600"]
 })
+
 export default function Home() {
   return (
     <main className="flex h-screen items-center justify-center content-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-400 to-blue-800">
@@ -21,7 +22,6 @@ export default function Home() {
           </LoginButton>
         </div>
       </div>
-
     </main>
   );
 }
