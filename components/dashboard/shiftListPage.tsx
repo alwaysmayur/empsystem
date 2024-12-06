@@ -84,7 +84,7 @@ const ShiftListPage: any = (props) => {
     setAvailbleDates(data.dates);
     if (props.isOffeShift == false) {
       setShifts(data.shifts);
-      setShiftHours(data.totalHours)
+      setShiftHours(data.totalHours);
     }
   };
 
@@ -172,11 +172,11 @@ const ShiftListPage: any = (props) => {
   };
 
   const handleSelectChange = (value: string) => {
-    let type = employees.filter(employee => employee._id == value);
+    let type = employees.filter((employee) => employee._id == value);
     if (type.length > 0) {
-      setTypeEmp(type[0].type)
+      setTypeEmp(type[0].type);
     }
-    
+
     setSelectedEmployee(value);
     // Optionally, you can handle filtering based on the selected employee
     // For example, you could trigger a re-fetch or filter a list of shifts here
@@ -348,9 +348,7 @@ const ShiftListPage: any = (props) => {
       });
   }, [props.isOffeShift, updateShiftsFlag]);
 
-  
-  return (
-    user ?
+  return user ? (
     <div className="p-4">
       {(user?.role == "admin" || user?.role == "hr") && !props.isOffeShift ? (
         <div className="flex gap-4 mb-4">
@@ -426,8 +424,6 @@ const ShiftListPage: any = (props) => {
           onDelete={handleDelete}
           onEdit={handleEdit}
         /> */}
-
-        {(shifts.length > 0 && !props.isOffeShift) || props.isOffeShift}
         <section
           className={`${
             !props.isOffeShift
@@ -448,9 +444,9 @@ const ShiftListPage: any = (props) => {
                       Upcoming Shifts
                     </h2>
                     {
-                    //  ( user?.role !== "admin" && user?.role !== "hr") || selectedEmployee !== "all" ? 
-                    //   <p className="text-white bg-gray-900 px-2 py-0.5 rounded-md text-sm font-noraml">Working hours {typeEmp == "Full Time"? `${shiftHours}hr / 56hr` :  `${shiftHours}hr / 24hr` }</p>
-                    //   : ""
+                      //  ( user?.role !== "admin" && user?.role !== "hr") || selectedEmployee !== "all" ?
+                      //   <p className="text-white bg-gray-900 px-2 py-0.5 rounded-md text-sm font-noraml">Working hours {typeEmp == "Full Time"? `${shiftHours}hr / 56hr` :  `${shiftHours}hr / 24hr` }</p>
+                      //   : ""
                     }
                   </div>
                 ) : (
@@ -466,9 +462,7 @@ const ShiftListPage: any = (props) => {
               <div className="flex flex-col gap-y-3 h-[480px] pb-10 overflow-y-auto overflow-x-hidden pr-2">
                 {shifts?.length > 0
                   ? shifts.map((shift: any) => (
-                    
                       <div key={shift._id} className=" rounded-xl bg-white">
-                     
                         <div className=" m-3 rounded-xl">
                           <div className="flex items-center justify-between mb-3">
                             <p className="text-md  font-bold text-gray-600 ">
@@ -582,10 +576,11 @@ const ShiftListPage: any = (props) => {
                         ) : (
                           ""
                         )}
-                      
+
                         {shift.swapRequests?.length > 0 &&
                         user.role === "employee" ? (
-                          shift.swapRequests[0].status == "pending" && shift.swapRequests[0].requesterId !== user._id ? (
+                          shift.swapRequests[0].status == "pending" &&
+                          shift.swapRequests[0].requesterId !== user._id ? (
                             <div className="px-3 pb-3 ">
                               <div className="flex items-center content-center gap-2">
                                 <p className="cursor-pointer text-sm  text-gray-800 rounded-md">
@@ -645,8 +640,9 @@ const ShiftListPage: any = (props) => {
                                 </p>
                               </div>
                             </>
-                          ) : shift.swapRequests[0].status !== "approved" && shift.swapRequests[0].requesterId ==
-                            shift.employeeId._id ? (
+                          ) : shift.swapRequests[0].status !== "approved" &&
+                            shift.swapRequests[0].requesterId ==
+                              shift.employeeId._id ? (
                             <div className="flex ps-2 border-t py-2 justify-start items-center content-center mt-2 gap-4">
                               <p className="cursor-pointer bg-blue-500 text-md  text-white font-normal  px-2 rounded-sm">
                                 {`Swaped declined`}
@@ -689,7 +685,9 @@ const ShiftListPage: any = (props) => {
           />
         )}
       </div>
-    </div> : ""
+    </div>
+  ) : (
+    ""
   );
 };
 
