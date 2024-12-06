@@ -448,9 +448,9 @@ const ShiftListPage: any = (props) => {
                       Upcoming Shifts
                     </h2>
                     {
-                     ( user?.role !== "admin" && user?.role !== "hr") || selectedEmployee !== "all" ? 
-                      <p className="text-white bg-gray-900 px-2 py-0.5 rounded-md text-sm font-noraml">Working hours {typeEmp == "Full Time"? `${shiftHours}hr / 56hr` :  `${shiftHours}hr / 24hr` }</p>
-                      : ""
+                    //  ( user?.role !== "admin" && user?.role !== "hr") || selectedEmployee !== "all" ? 
+                    //   <p className="text-white bg-gray-900 px-2 py-0.5 rounded-md text-sm font-noraml">Working hours {typeEmp == "Full Time"? `${shiftHours}hr / 56hr` :  `${shiftHours}hr / 24hr` }</p>
+                    //   : ""
                     }
                   </div>
                 ) : (

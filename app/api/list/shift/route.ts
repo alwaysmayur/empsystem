@@ -4,20 +4,25 @@ import connectDB from "@/utility/db/mongoDB/connection";
 import { getDataFromToken } from "@/helper/getDataFromToken";
 import employeedb from "@/utility/db/mongoDB/schema/userSchema";
 import { Employee } from "@/type/Employee";
-import moment from "moment";
 import SwapRequestModel from "@/utility/db/mongoDB/schema/swapRequestSchema";
 import UserModel from "@/utility/db/mongoDB/schema/userSchema";
+
+import moment from "moment-timezone";
 import dayjs from "dayjs";
+import utc from "dayjs-plugin-utc";
+import timezone from "dayjs-timezone-iana-plugin";
+
+// Initialize plugins for Day.js
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const CANADA_TIMEZONE = "America/Toronto";
 
 export async function POST(request: NextRequest) {
   try {
-    // Connect to the database
     await connectDB();
 
-    // Extract user ID from the authentication token
     const userId = await getDataFromToken(request);
-
-    // Fetch user to check the role
     const user: Employee | null = await employeedb.findById(userId);
     if (!user) {
       return NextResponse.json({
@@ -26,29 +31,25 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Parse the request body to get the startDate, employeeId, role, and swap flag
     const { startDate, employeeId, role, swap } = await request.json();
     let dateFilter: any = {};
     let shifts: any;
     let shiftIds: any[] = [];
-    const currentDate = moment().startOf("day").toDate(); // Start of the current day
+
+    // Get current date in Canada timezone
+    const currentDate = moment().tz(CANADA_TIMEZONE).startOf("day").toDate();
 
     if (swap) {
-      // Fetch the job role of the current user
       const userJobRole = user.jobRole;
-
-      // Fetch all users with the same job role
       const employeesWithMatchingRole = await UserModel.find(
         { jobRole: userJobRole },
         "_id"
       );
-
       const employeeIdsWithRole = employeesWithMatchingRole.map((e) => e._id);
 
-      // Fetch shifts excluding those of the logged-in user and completed or canceled shifts
       shifts = await ShiftModel.find({
         shiftDate: { $gte: currentDate },
-        employeeId: { $ne: userId, $in: employeeIdsWithRole }, // Match job role
+        employeeId: { $ne: userId, $in: employeeIdsWithRole },
         status: { $nin: ["complete", "cancel"] },
         ...dateFilter,
       })
@@ -57,7 +58,6 @@ export async function POST(request: NextRequest) {
 
       shiftIds = shifts.map((shift: any) => shift._id);
 
-      // Fetch related swap requests
       const swapRequests = await SwapRequestModel.find({
         $or: [
           { requesterShiftId: { $in: shiftIds } },
@@ -65,7 +65,6 @@ export async function POST(request: NextRequest) {
         ],
       });
 
-      // Add swap request data to each shift
       shifts = await Promise.all(
         shifts.map(async (shift: any) => {
           const relatedSwapRequests = swapRequests.filter(
@@ -80,9 +79,9 @@ export async function POST(request: NextRequest) {
               return {
                 ...swapRequest.toObject(),
                 user: userData?.name || "Unknown User",
-                shiftDate: moment(
-                  swapRequest.requesterShiftId.shiftDate
-                ).format("YYYY-MM-DD"),
+                shiftDate: moment(swapRequest.requesterShiftId.shiftDate)
+                  .tz(CANADA_TIMEZONE)
+                  .format("YYYY-MM-DD"),
               };
             })
           );
@@ -92,19 +91,32 @@ export async function POST(request: NextRequest) {
             totalHours: calculateTotalHours(
               shift.startTime,
               shift.endTime
-            ), // Add total hours
+            ),
             swapRequests: swapRequestsWithUser,
           };
         })
       );
     } else {
-      const weekEnd = moment().endOf("week").toDate();
+      const weekEnd = moment().tz(CANADA_TIMEZONE).endOf("week").toDate();
 
-      if (startDate && !moment(startDate).isSame(currentDate, "day")) {
-        dateFilter.shiftDate = moment(startDate).format("YYYY-MM-DD");
-      } else {
-        dateFilter.shiftDate = { $gte: currentDate, $lte: weekEnd };
-      }
+      // if (startDate && !moment(startDate).isSame(currentDate, "day")) {
+      //   dateFilter.shiftDate = moment(startDate)
+      //     .tz(CANADA_TIMEZONE)
+      //     .format("YYYY-MM-DD");
+      // } else {
+      //   dateFilter.shiftDate = { $gte: currentDate, $lte: weekEnd };
+      // }
+
+      const startOfWeek = moment(startDate || undefined)
+      .tz(CANADA_TIMEZONE)
+      .startOf("week")
+      .toDate();
+
+    const endOfWeek = moment(startDate || undefined)
+      .tz(CANADA_TIMEZONE)
+      .endOf("week")
+      .toDate();
+      dateFilter.shiftDate = { $gte: startOfWeek, $lte: endOfWeek };
 
       if (user.role === "hr" || user.role === "admin") {
         if (employeeId && employeeId !== "all") {
@@ -150,9 +162,7 @@ export async function POST(request: NextRequest) {
 
           const swapRequestsWithUser = await Promise.all(
             relatedSwapRequests.map(async (swapRequest: any) => {
-              const userData = await UserModel.findById(
-                swapRequest.requesterId
-              );
+              const userData = await UserModel.findById(swapRequest.requesterId);
               const getShiftData = await ShiftModel.findById(
                 swapRequest.requesterShiftId.toString()
               );
@@ -161,9 +171,9 @@ export async function POST(request: NextRequest) {
                 startTime: getShiftData?.startTime,
                 endTime: getShiftData?.endTime,
                 user: userData?.name || "Unknown User",
-                shiftDate: moment(
-                  swapRequest.requesterShiftId.shiftDate
-                ).format("YYYY-MM-DD"),
+                shiftDate: moment(swapRequest.requesterShiftId.shiftDate)
+                  .tz(CANADA_TIMEZONE)
+                  .format("YYYY-MM-DD"),
               };
             })
           );
@@ -173,29 +183,25 @@ export async function POST(request: NextRequest) {
             totalHours: calculateTotalHours(
               shift.startTime,
               shift.endTime
-            ), // Add total hours
+            ),
             swapRequests: swapRequestsWithUser,
           };
         })
       );
     }
 
-    // Calculate total hours for all shifts
     const totalHours = shifts.reduce(
       (sum: number, shift: any) => sum + (shift.totalHours || 0),
       0
     );
 
-    // Extract all unique dates from shifts and mark them as available
     const shiftDates = Array.from(
       new Set(shifts.map((shift: any) => shift.shiftDate))
     );
 
-    // Get the start (Monday) and end (Sunday) of the current week
-    const startOfWeek = dayjs().startOf("week");
+    const startOfWeek = dayjs().tz(CANADA_TIMEZONE).startOf("week");
     const endOfWeek = startOfWeek.add(6, "day");
 
-    // Generate all dates of the current week
     const currentWeekDates = [];
     for (
       let date = startOfWeek;
@@ -205,21 +211,19 @@ export async function POST(request: NextRequest) {
       currentWeekDates.push(date.format("YYYY-MM-DD"));
     }
 
-    // Map currentWeekDates to include availability
     const dates = currentWeekDates.map((date) => ({
       date,
       available: shiftDates.some(
         (shiftDate) =>
-          moment(shiftDate).isSame(moment(date, "YYYY-MM-DD"), "day") // Compare dates using Moment.js
+          moment(shiftDate).isSame(moment(date, "YYYY-MM-DD"), "day")
       ),
     }));
 
-    // Return shifts along with the dates array and total hours
     return NextResponse.json({
       status: 200,
       shifts,
       dates,
-      totalHours, // Include total hours in the response
+      totalHours,
     });
   } catch (error: unknown) {
     console.error("Get Shifts API Error ::", error);
@@ -230,7 +234,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to calculate total hours
 function calculateTotalHours(startTime: string, endTime: string): number {
   const start = moment(startTime, "HH:mm");
   const end = moment(endTime, "HH:mm");
