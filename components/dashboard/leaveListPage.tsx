@@ -170,7 +170,7 @@ const LeaveListPage = (pieData: any) => {
     setIsDialogOpen(false);
   };
 
-  return leaves?.length > 0 ? (
+  return leaves  ? (
     <div className="p-4 w-full">
       <h1 className={cn("font-semibold text-xl mb-2", font.className)}>
         Leaves
