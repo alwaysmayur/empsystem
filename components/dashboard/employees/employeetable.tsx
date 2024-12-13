@@ -58,7 +58,7 @@ export const EmployeeTable: React.FC<TableProps> = ({
               <TableRow key={employee._id}>
                 <TableCell>{employee.name}</TableCell>
                 <TableCell>{employee.email}</TableCell>
-                <TableCell>{employee.role}</TableCell>
+                <TableCell>{employee.jobRole}</TableCell>
                 <TableCell>{employee.type}</TableCell>
                 {/* <TableCell>{employee.mobileNumber}</TableCell> */}
                 {/* <TableCell>{employee.address}</TableCell> */}

@@ -209,7 +209,7 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
                         <option value="">Select an employee</option>
                         {employees.map((employee) => (
                           <option key={employee._id} value={employee._id}>
-                            {employee.name || "Unknown Employee"}
+                            {employee.name + " (" + employee.jobRole + ")"|| "Unknown Employee"}
                           </option>
                         ))}
                       </select>
